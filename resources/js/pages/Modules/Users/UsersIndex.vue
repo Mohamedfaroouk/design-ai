@@ -1,8 +1,11 @@
 <template>
-    <div v-motion-fade>
+    <div>
         <div class="flex items-center justify-between mb-6">
-            <h1 class="text-3xl font-bold text-gray-900">Users</h1>
-            <Button variant="primary" @click="$router.push('/users/create')">
+            <h1 class="text-3xl font-bold transition-colors"
+                :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
+                {{ $t('users.title') }}
+            </h1>
+            <Button variant="primary" @click="$router.push('/admin/users/create')">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                         stroke-linecap="round"
@@ -11,19 +14,31 @@
                         d="M12 4v16m8-8H4"
                     />
                 </svg>
-                Add User
+                {{ $t('users.addNew') }}
             </Button>
         </div>
 
         <DataTable
             :columns="columns"
-            :data="usersStore.items"
+            :data="usersStore.users"
             :meta="usersStore.meta"
             :loading="usersStore.loading"
+            :filterable="true"
             @search="handleSearch"
             @sort="handleSort"
             @page-change="handlePageChange"
+            @filter="handleFilter"
         >
+            <template #filters="{ filters: filterData, updateFilter }">
+                <div class="space-y-4">
+                    <Select
+                        :modelValue="filterData.role"
+                        @update:modelValue="updateFilter('role', $event)"
+                        :label="$t('users.fields.role')"
+                        :options="roleOptions"
+                    />
+                </div>
+            </template>
             <template #cell-avatar="{ row }">
                 <div
                     class="w-10 h-10 rounded-full bg-primary-600 text-white flex items-center justify-center"
@@ -32,22 +47,25 @@
                 </div>
             </template>
 
-            <template #cell-status="{ row }">
+            <template #cell-role="{ row }">
                 <span
-                    class="px-2 py-1 text-xs font-medium rounded-full"
-                    :class="row.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'"
+                    class="px-2 py-1 text-xs font-medium rounded-full transition-colors"
+                    :class="appStore.darkMode
+                        ? 'bg-indigo-900/30 text-indigo-400 border border-indigo-700'
+                        : 'bg-indigo-100 text-indigo-800'"
                 >
-                    {{ row.status }}
+                    {{ row.roles?.[0]?.name || 'N/A' }}
                 </span>
             </template>
 
             <template #actions="{ row }">
                 <div class="flex items-center gap-2">
                     <button
-                        @click="$router.push(`/users/${row.id}/edit`)"
-                        class="text-primary-600 hover:text-primary-900"
+                        @click="$router.push(`/admin/users/${row.id}/edit`)"
+                        class="transition-colors"
+                        :class="appStore.darkMode
+                            ? 'text-indigo-400 hover:text-indigo-300'
+                            : 'text-primary-600 hover:text-primary-900'"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
@@ -60,7 +78,10 @@
                     </button>
                     <button
                         @click="confirmDelete(row)"
-                        class="text-red-600 hover:text-red-900"
+                        class="transition-colors"
+                        :class="appStore.darkMode
+                            ? 'text-red-400 hover:text-red-300'
+                            : 'text-red-600 hover:text-red-900'"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
@@ -76,16 +97,17 @@
         </DataTable>
 
         <!-- Delete Confirmation Modal -->
-        <Modal v-model="showDeleteModal" title="Confirm Delete" size="sm">
-            <p class="text-gray-700">
-                Are you sure you want to delete <strong>{{ userToDelete?.name }}</strong>?
-                This action cannot be undone.
+        <Modal v-model="showDeleteModal" :title="$t('users.deleteConfirm')" size="sm">
+            <p :class="appStore.darkMode ? 'text-gray-300' : 'text-gray-700'">
+                {{ $t('users.deleteConfirm') }} <strong>{{ userToDelete?.name }}</strong>?
             </p>
 
             <template #footer>
-                <Button variant="secondary" @click="showDeleteModal = false">Cancel</Button>
+                <Button variant="secondary" @click="showDeleteModal = false">
+                    {{ $t('common.cancel') }}
+                </Button>
                 <Button variant="danger" :loading="usersStore.loading" @click="handleDelete">
-                    Delete
+                    {{ $t('common.delete') }}
                 </Button>
             </template>
         </Modal>
@@ -93,33 +115,56 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useUsersStore } from '@/store/users'
+import { ref, onMounted, computed } from 'vue'
+import { useAdminUsersStore } from '@/store/admin/users'
+import { useAdminRolesStore } from '@/store/admin/roles'
+import { useAppStore } from '@/store'
+import { useToastStore } from '@/store'
+import { useI18n } from 'vue-i18n'
 import DataTable from '@/components/tables/DataTable.vue'
 import Button from '@/components/ui/Button.vue'
 import Modal from '@/components/ui/Modal.vue'
+import Select from '@/components/inputs/Select.vue'
 
-const usersStore = useUsersStore()
+const usersStore = useAdminUsersStore()
+const rolesStore = useAdminRolesStore()
+const appStore = useAppStore()
+const toast = useToastStore()
+const { t } = useI18n()
+
 const showDeleteModal = ref(false)
 const userToDelete = ref(null)
 const filters = ref({
     search: '',
-    sort_by: 'created_at',
-    sort_order: 'desc',
-    page: 1
+    sortBy: 'created_at',
+    sortOrder: 'desc',
+    page: 1,
+    perPage: 15,
+    role: ''
 })
 
-const columns = [
+const columns = computed(() => [
     { key: 'avatar', label: '', sortable: false },
-    { key: 'name', label: 'Name', sortable: true },
-    { key: 'email', label: 'Email', sortable: true },
-    { key: 'role', label: 'Role', sortable: true },
-    { key: 'status', label: 'Status', sortable: true },
-    { key: 'created_at', label: 'Created', sortable: true }
-]
+    { key: 'name', label: t('users.fields.name'), sortable: true },
+    { key: 'email', label: t('users.fields.email'), sortable: true },
+    { key: 'role', label: t('users.fields.role'), sortable: false },
+    { key: 'created_at', label: t('users.fields.createdAt'), sortable: true }
+])
+
+const roleOptions = computed(() => [
+    { value: '', label: t('common.all') },
+    ...rolesStore.roles.map(role => ({
+        value: role.id,
+        label: role.name
+    }))
+])
 
 const loadUsers = async () => {
-    await usersStore.fetchList(filters.value)
+    try {
+        await usersStore.fetchList(filters.value)
+    } catch (error) {
+        toast.error(error.message || t('common.error'))
+    }
 }
 
 const handleSearch = (query) => {
@@ -129,13 +174,18 @@ const handleSearch = (query) => {
 }
 
 const handleSort = ({ column, order }) => {
-    filters.value.sort_by = column
-    filters.value.sort_order = order
+    filters.value.sortBy = column
+    filters.value.sortOrder = order
     loadUsers()
 }
 
 const handlePageChange = (page) => {
     filters.value.page = page
+    loadUsers()
+}
+
+const handleFilter = (filterData) => {
+    filters.value = { ...filters.value, ...filterData, page: 1 }
     loadUsers()
 }
 
@@ -146,16 +196,18 @@ const confirmDelete = (user) => {
 
 const handleDelete = async () => {
     try {
-        await usersStore.delete(userToDelete.value.id)
+        const response = await usersStore.delete(userToDelete.value.id)
+        toast.success(response.message || t('users.deleteSuccess'))
         showDeleteModal.value = false
         userToDelete.value = null
-        loadUsers()
+        await loadUsers()
     } catch (error) {
-        // Error handled by store
+        toast.error(error.message || t('common.error'))
     }
 }
 
-onMounted(() => {
-    loadUsers()
+onMounted(async () => {
+    await rolesStore.fetchList()
+    await loadUsers()
 })
 </script>

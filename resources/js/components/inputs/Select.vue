@@ -1,73 +1,173 @@
 <template>
-    <div class="mb-4">
-        <label v-if="label" :for="id" class="block text-sm font-medium text-gray-700 mb-1">
+    <div class="mb-5">
+        <label v-if="label" :for="id" class="block text-sm font-semibold mb-2"
+               :class="appStore.darkMode ? 'text-gray-300' : 'text-gray-700'">
             {{ label }}
             <span v-if="required" class="text-red-500">*</span>
         </label>
-        <div class="relative">
-            <select
-                v-if="!searchable"
-                :id="id"
-                :value="modelValue"
-                @change="$emit('update:modelValue', $event.target.value)"
-                :disabled="disabled"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none"
-                :class="{ 'border-red-500': error }"
-            >
-                <option value="" v-if="placeholder">{{ placeholder }}</option>
-                <option
-                    v-for="option in computedOptions"
-                    :key="option[valueKey]"
-                    :value="option[valueKey]"
-                >
-                    {{ option[labelKey] }}
-                </option>
-            </select>
-
-            <!-- Searchable Select -->
-            <div v-else>
-                <div
+        <div class="relative group">
+            <!-- Custom Select Dropdown -->
+            <div class="relative">
+                <button
+                    type="button"
                     @click="toggleDropdown"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer bg-white"
-                    :class="{ 'border-red-500': error }"
+                    :disabled="disabled"
+                    class="w-full px-4 py-3 pe-10 border-2 rounded-xl shadow-sm transition-all duration-200 cursor-pointer backdrop-blur-sm text-start disabled:cursor-not-allowed disabled:opacity-60"
+                    :class="error
+                        ? 'border-red-300 bg-red-50/50 dark:bg-red-900/20 dark:border-red-500 dark:text-gray-200'
+                        : appStore.darkMode
+                            ? 'border-gray-600 bg-gray-800 text-gray-200 hover:border-gray-500 disabled:hover:border-gray-600'
+                            : 'border-primary-200 bg-white/50 hover:border-primary-300 focus:border-primary disabled:hover:border-primary-200'"
                 >
-                    <span v-if="selectedLabel">{{ selectedLabel }}</span>
-                    <span v-else class="text-gray-400">{{ placeholder }}</span>
+                    <span v-if="selectedLabel" class="block truncate">{{ selectedLabel }}</span>
+                    <span v-else :class="appStore.darkMode ? 'text-gray-500' : 'text-gray-400'">{{ placeholder }}</span>
+                </button>
+                <!-- Dropdown Arrow Icon -->
+                <div class="absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-200"
+                     :class="isOpen ? 'rotate-180' : 'rotate-0'">
+                    <svg class="w-5 h-5 transition-colors"
+                         :class="disabled
+                             ? appStore.darkMode ? 'text-gray-600' : 'text-gray-400'
+                             : appStore.darkMode ? 'text-gray-400 group-hover:text-primary-400' : 'text-gray-500 group-hover:text-primary-600'"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                 </div>
 
-                <div
-                    v-if="isOpen"
-                    class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+                <Transition
+                    enter-active-class="transition ease-out duration-200"
+                    enter-from-class="opacity-0 scale-95"
+                    enter-to-class="opacity-100 scale-100"
+                    leave-active-class="transition ease-in duration-100"
+                    leave-from-class="opacity-100 scale-100"
+                    leave-to-class="opacity-0 scale-95"
                 >
-                    <input
-                        v-model="searchQuery"
-                        type="text"
-                        placeholder="Search..."
-                        class="w-full px-3 py-2 border-b border-gray-300 focus:outline-none"
-                        @click.stop
-                    />
                     <div
-                        v-for="option in filteredOptions"
-                        :key="option[valueKey]"
-                        @click="selectOption(option)"
-                        class="px-3 py-2 cursor-pointer hover:bg-gray-100"
-                        :class="{ 'bg-primary-50': option[valueKey] === modelValue }"
+                        v-if="isOpen"
+                        class="absolute z-50 w-full mt-2 rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm ring-1"
+                        :class="appStore.darkMode
+                            ? 'bg-gray-800 ring-gray-700'
+                            : 'bg-white ring-primary-200/50'"
                     >
-                        {{ option[labelKey] }}
+                        <!-- Search Input -->
+                        <div
+                            v-if="searchable"
+                            class="p-2 border-b"
+                            :class="appStore.darkMode ? 'border-gray-700' : 'border-gray-100'"
+                        >
+                            <div class="relative">
+                                <svg class="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                                     :class="appStore.darkMode ? 'text-gray-500' : 'text-gray-400'"
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <input
+                                    v-model="searchQuery"
+                                    type="text"
+                                    placeholder="Search..."
+                                    class="w-full ps-9 pe-3 py-2 rounded-lg focus:outline-none transition-all text-sm"
+                                    :class="appStore.darkMode
+                                        ? 'bg-gray-900 text-gray-200 placeholder-gray-500 focus:bg-gray-900/80 focus:ring-2 focus:ring-primary-500/50'
+                                        : 'bg-gray-50 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-primary-500/50'"
+                                    @click.stop
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Options List -->
+                        <div class="max-h-60 overflow-y-auto py-1 scrollbar-thin scrollbar-thumb-rounded"
+                             :class="appStore.darkMode ? 'scrollbar-thumb-gray-600 scrollbar-track-gray-800' : 'scrollbar-thumb-gray-300 scrollbar-track-gray-100'">
+                            <div
+                                v-for="option in filteredOptions"
+                                :key="option[valueKey]"
+                                @click="selectOption(option)"
+                                class="group relative px-4 py-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between"
+                                :class="option[valueKey] === modelValue
+                                    ? appStore.darkMode
+                                        ? 'bg-primary-900/30 text-primary-300'
+                                        : 'bg-primary-50 text-primary-700'
+                                    : appStore.darkMode
+                                        ? 'text-gray-300 hover:bg-gray-700/50'
+                                        : 'text-gray-700 hover:bg-primary-50/50'"
+                            >
+                                <!-- Option Label -->
+                                <span class="text-sm font-medium truncate"
+                                      :class="option[valueKey] === modelValue ? 'font-semibold' : ''">
+                                    {{ option[labelKey] }}
+                                </span>
+
+                                <!-- Selected Checkmark -->
+                                <svg
+                                    v-if="option[valueKey] === modelValue"
+                                    class="w-5 h-5 flex-shrink-0 ms-2 animate-in fade-in zoom-in duration-200"
+                                    :class="appStore.darkMode ? 'text-primary-400' : 'text-primary-600'"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                </svg>
+
+                                <!-- Hover Indicator -->
+                                <div
+                                    v-else
+                                    class="w-5 h-5 flex-shrink-0 ms-2 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                    :class="appStore.darkMode ? 'bg-gray-600' : 'bg-primary-200/50'"
+                                ></div>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div
+                                v-if="filteredOptions.length === 0"
+                                class="px-4 py-8 text-center"
+                            >
+                                <svg class="w-12 h-12 mx-auto mb-2"
+                                     :class="appStore.darkMode ? 'text-gray-600' : 'text-gray-300'"
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p class="text-sm font-medium"
+                                   :class="appStore.darkMode ? 'text-gray-400' : 'text-gray-500'">
+                                    No options found
+                                </p>
+                                <p class="text-xs mt-1"
+                                   :class="appStore.darkMode ? 'text-gray-500' : 'text-gray-400'">
+                                    Try a different search term
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Options Count Footer (if searchable) -->
+                        <div
+                            v-if="searchable && filteredOptions.length > 0"
+                            class="px-3 py-2 border-t text-xs"
+                            :class="appStore.darkMode
+                                ? 'border-gray-700 text-gray-500 bg-gray-900/50'
+                                : 'border-gray-100 text-gray-500 bg-gray-50/50'"
+                        >
+                            {{ filteredOptions.length }} of {{ computedOptions.length }} option{{ computedOptions.length !== 1 ? 's' : '' }}
+                        </div>
                     </div>
-                    <div v-if="filteredOptions.length === 0" class="px-3 py-2 text-gray-500">
-                        No options found
-                    </div>
-                </div>
+                </Transition>
             </div>
         </div>
-        <p v-if="error" class="mt-1 text-sm text-red-600">{{ error }}</p>
-        <p v-else-if="hint" class="mt-1 text-sm text-gray-500">{{ hint }}</p>
+        <p v-if="error" class="mt-2 text-sm flex items-center gap-1"
+           :class="appStore.darkMode ? 'text-red-400' : 'text-red-600'">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            {{ error }}
+        </p>
+        <p v-else-if="hint" class="mt-2 text-sm"
+           :class="appStore.darkMode ? 'text-gray-400' : 'text-gray-500'">{{ hint }}</p>
     </div>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useAppStore } from '@/store'
+
+const appStore = useAppStore()
 
 const props = defineProps({
     modelValue: {

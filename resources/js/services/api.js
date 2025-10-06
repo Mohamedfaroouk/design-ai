@@ -24,6 +24,10 @@ api.interceptors.request.use(
             config.headers['X-CSRF-TOKEN'] = csrfToken
         }
 
+        // Add locale from localStorage or default to 'en'
+        const locale = localStorage.getItem('locale') || 'en'
+        config.headers['Accept-Language'] = locale
+
         return config
     },
     (error) => {
@@ -64,8 +68,8 @@ api.interceptors.response.use(
                 normalizedError.message = 'Resource not found'
             }
 
-            // Handle 422 Validation Error
-            if (error.response.status === 422) {
+            // Handle 422 Validation Error - keep original message
+            if (error.response.status === 422 && !error.response.data?.message) {
                 normalizedError.message = 'Validation failed'
             }
 

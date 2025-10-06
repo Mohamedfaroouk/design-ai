@@ -1,0 +1,292 @@
+{
+    "common": {
+        "search": "Search...",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "view": "View",
+        "actions": "Actions",
+        "create": "Create",
+        "update": "Update",
+        "close": "Close",
+        "confirm": "Confirm",
+        "yes": "Yes",
+        "no": "No",
+        "loading": "Loading...",
+        "noData": "No data available",
+        "previous": "Previous",
+        "next": "Next",
+        "showing": "Showing",
+        "to": "to",
+        "of": "of",
+        "results": "results",
+        "selectAll": "Select All",
+        "unselectAll": "Unselect All",
+        "error": "An error occurred",
+        "filters": "Filters",
+        "clearFilters": "Clear Filters",
+        "apply": "Apply",
+        "all": "All"
+    },
+    "settings": {
+        "title": "Settings",
+        "subtitle": "Manage your application settings",
+        "updateSuccess": "Settings updated successfully",
+        "updateError": "Failed to update settings",
+        "loadError": "Failed to load settings",
+        "groups": {
+            "general": "General",
+            "email": "Email",
+            "appearance": "Appearance",
+            "social": "Social Media",
+            "system": "System"
+        },
+        "fields": {
+            "app_name": "Application Name",
+            "app_description": "Application Description",
+            "app_logo": "Application Logo",
+            "app_favicon": "Favicon",
+            "mail_from_address": "From Email Address",
+            "mail_from_name": "From Name",
+            "appearance_primary_color": "Primary Color",
+            "appearance_dark_mode_default": "Dark Mode by Default",
+            "social_facebook": "Facebook URL",
+            "social_twitter": "Twitter URL",
+            "social_instagram": "Instagram URL",
+            "social_linkedin": "LinkedIn URL",
+            "system_maintenance_mode": "Maintenance Mode",
+            "system_allow_registration": "Allow User Registration",
+            "system_items_per_page": "Items Per Page"
+        }
+    },
+    "auth": {
+        "login": {
+            "title": "Welcome Back",
+            "subtitle": "Sign in to your account to continue",
+            "email": "Email Address",
+            "emailPlaceholder": "Enter your email",
+            "password": "Password",
+            "passwordPlaceholder": "Enter your password",
+            "rememberMe": "Remember me",
+            "forgotPassword": "Forgot password?",
+            "loginButton": "Sign In",
+            "orContinueWith": "Or continue with",
+            "noAccount": "Don't have an account?",
+            "signUp": "Sign up",
+            "success": "Login successful! Redirecting...",
+            "error": "Invalid credentials. Please try again.",
+            "socialLogin": "Continue with {provider}"
+        },
+        "forgot": {
+            "title": "Forgot Password?",
+            "subtitle": "Enter your email and we'll send you a reset link",
+            "email": "Email Address",
+            "emailPlaceholder": "Enter your email",
+            "sendResetLink": "Send Reset Link",
+            "backToLogin": "Back to Login",
+            "emailSent": "Check your email",
+            "checkEmail": "We've sent a password reset link to {email}",
+            "emailSentSuccess": "Password reset email sent successfully",
+            "error": "Failed to send reset email. Please try again.",
+            "resendEmail": "Resend Email",
+            "resendIn": "Resend in {seconds}s",
+            "emailResent": "Email resent successfully",
+            "resendError": "Failed to resend email"
+        },
+        "otp": {
+            "title": "Verify Your Account",
+            "subtitle": "Enter the 6-digit code sent to {email}",
+            "enterCode": "Enter verification code",
+            "verify": "Verify Code",
+            "didntReceive": "Didn't receive the code?",
+            "resendCode": "Resend Code",
+            "resendIn": "Resend in {seconds}s",
+            "backToLogin": "Back to Login",
+            "invalidCode": "Invalid verification code",
+            "success": "Verification successful!",
+            "error": "Verification failed. Please try again.",
+            "codeSent": "Verification code sent successfully",
+            "resendError": "Failed to resend code"
+        },
+        "reset": {
+            "title": "Reset Password",
+            "subtitle": "Create a new password for your account",
+            "newPassword": "New Password",
+            "passwordPlaceholder": "Enter new password",
+            "confirmPassword": "Confirm Password",
+            "confirmPasswordPlaceholder": "Re-enter password",
+            "resetButton": "Reset Password",
+            "success": "Password reset successfully!",
+            "error": "Failed to reset password",
+            "requirements": {
+                "title": "Password requirements:",
+                "minLength": "At least 8 characters",
+                "uppercase": "One uppercase letter",
+                "lowercase": "One lowercase letter",
+                "number": "One number",
+                "special": "One special character"
+            },
+            "strength": {
+                "weak": "Weak password",
+                "fair": "Fair password",
+                "good": "Good password",
+                "strong": "Strong password"
+            }
+        },
+        "logout": "Logout",
+        "register": "Register"
+    },
+    "sidebar": {
+        "dashboard": "Dashboard",
+        "management": "Management",
+        "users": "Users",
+        "roles": "Roles & Permissions",
+        "settings": "Settings",
+        "analytics": "Analytics",
+        "profile": "My Profile"
+    },
+    "topbar": {
+        "adminPanel": "Admin Panel",
+        "welcomeBack": "Welcome back, Admin!",
+        "notifications": "Notifications",
+        "profile": "Profile",
+        "settings": "Settings",
+        "logout": "Logout"
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "subtitle": "Welcome back! Here's what's happening today.",
+        "stats": {
+            "totalUsers": "Total Users",
+            "activeProjects": "Active Projects",
+            "revenue": "Revenue",
+            "growth": "Growth"
+        },
+        "recentActivity": "Recent Activity",
+        "quickActions": "Quick Actions",
+        "addUser": "Add User",
+        "viewReports": "View Reports",
+        "manageSettings": "Manage Settings"
+    },
+    "users": {
+        "title": "Users",
+        "subtitle": "Manage system users",
+        "addNew": "Add New User",
+        "editUser": "Edit User",
+        "deleteConfirm": "Are you sure you want to delete this user?",
+        "deleteMessage": "This action cannot be undone. All data associated with this user will be permanently deleted.",
+        "deleteSuccess": "User deleted successfully",
+        "createSuccess": "User created successfully",
+        "updateSuccess": "User updated successfully",
+        "fields": {
+            "name": "Name",
+            "email": "Email",
+            "password": "Password",
+            "passwordConfirmation": "Confirm Password",
+            "role": "Role",
+            "status": "Status",
+            "createdAt": "Created At",
+            "updatedAt": "Updated At"
+        },
+        "placeholders": {
+            "name": "Enter full name",
+            "email": "Enter email address",
+            "password": "Enter password",
+            "passwordConfirmation": "Re-enter password",
+            "role": "Select role",
+            "search": "Search users..."
+        }
+    },
+    "roles": {
+        "title": "Roles & Permissions",
+        "subtitle": "Manage user roles and permissions",
+        "addNew": "Add New Role",
+        "editRole": "Edit Role",
+        "deleteConfirm": "Are you sure you want to delete this role?",
+        "deleteMessage": "This action cannot be undone. Make sure no users are assigned to this role.",
+        "deleteSuccess": "Role deleted successfully",
+        "createSuccess": "Role created successfully",
+        "updateSuccess": "Role updated successfully",
+        "systemRole": "System Role",
+        "systemRoleInfo": "System roles cannot be modified or deleted",
+        "fields": {
+            "name": "Role Name",
+            "permissions": "Permissions",
+            "usersCount": "Users Count",
+            "createdAt": "Created At",
+            "updatedAt": "Updated At"
+        },
+        "placeholders": {
+            "name": "Enter role name",
+            "permissions": "Select permissions",
+            "search": "Search roles..."
+        },
+        "permissionsGroups": {
+            "users": "Users Management",
+            "roles": "Roles Management",
+            "settings": "Settings"
+        }
+    },
+    "validation": {
+        "required": "This field is required",
+        "email": "Please enter a valid email",
+        "minLength": "Minimum length is {min} characters",
+        "maxLength": "Maximum length is {max} characters"
+    },
+    "theme": {
+        "label": "Theme Color",
+        "indigo": "Indigo",
+        "blue": "Blue",
+        "purple": "Purple",
+        "pink": "Pink",
+        "green": "Green",
+        "orange": "Orange",
+        "red": "Red"
+    },
+    "language": {
+        "label": "Language",
+        "en": "English",
+        "ar": "Arabic"
+    },
+    "darkMode": {
+        "light": "Light Mode",
+        "dark": "Dark Mode"
+    },
+    "profile": {
+        "title": "My Profile",
+        "subtitle": "Manage your personal information and password",
+        "personalInfo": "Personal Information",
+        "security": "Security",
+        "changePassword": "Change Password",
+        "updateSuccess": "Profile updated successfully",
+        "updateError": "Failed to update profile",
+        "fields": {
+            "name": "Full Name",
+            "email": "Email Address",
+            "currentPassword": "Current Password",
+            "newPassword": "New Password",
+            "confirmPassword": "Confirm New Password"
+        },
+        "placeholders": {
+            "name": "Enter your full name",
+            "email": "Enter your email address",
+            "currentPassword": "Enter current password",
+            "newPassword": "Enter new password",
+            "confirmPassword": "Confirm your new password"
+        },
+        "password": {
+            "changed": "Password changed successfully",
+            "changeFailed": "Failed to change password",
+            "currentIncorrect": "Current password is incorrect",
+            "requirements": {
+                "title": "Password requirements:",
+                "minLength": "At least 8 characters",
+                "uppercase": "One uppercase letter",
+                "lowercase": "One lowercase letter",
+                "number": "One number",
+                "special": "One special character"
+            }
+        }
+    }
+}

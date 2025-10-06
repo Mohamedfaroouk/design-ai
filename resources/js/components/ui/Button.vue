@@ -3,7 +3,7 @@
         :type="type"
         :disabled="disabled || loading"
         @click="$emit('click', $event)"
-        class="inline-flex items-center justify-center gap-2 px-4 py-2 border rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="inline-flex items-center justify-center gap-2 rounded-xl font-semibold focus:outline-none cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0"
         :class="buttonClasses"
     >
         <svg
@@ -33,6 +33,9 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useAppStore } from '@/store'
+
+const appStore = useAppStore()
 
 const props = defineProps({
     type: {
@@ -63,17 +66,21 @@ defineEmits(['click'])
 
 const buttonClasses = computed(() => {
     const variants = {
-        primary: 'bg-primary-600 text-white border-primary-600 hover:bg-primary-700 focus:ring-primary-500',
-        secondary: 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 focus:ring-gray-500',
-        danger: 'bg-red-600 text-white border-red-600 hover:bg-red-700 focus:ring-red-500',
-        success: 'bg-green-600 text-white border-green-600 hover:bg-green-700 focus:ring-green-500',
-        warning: 'bg-yellow-600 text-white border-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500',
-        ghost: 'bg-transparent text-gray-700 border-transparent hover:bg-gray-100 focus:ring-gray-500'
+        primary: 'bg-gradient-to-r from-primary to-secondary text-white border-transparent hover:from-primary-dark hover:to-secondary-dark focus:ring-primary-300 dark:focus:ring-primary-900/50',
+        secondary: appStore.darkMode
+            ? 'bg-gray-700 text-gray-200 border-gray-600 hover:bg-gray-600 hover:border-gray-500 focus:ring-gray-700'
+            : 'bg-white text-gray-700 border-primary-200 hover:bg-primary-50 hover:border-primary-300 focus:ring-primary-200',
+        danger: 'bg-gradient-to-r from-red-600 to-pink-600 text-white border-transparent hover:from-red-700 hover:to-pink-700 focus:ring-red-300 dark:focus:ring-red-900/50',
+        success: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-transparent hover:from-green-700 hover:to-emerald-700 focus:ring-green-300 dark:focus:ring-green-900/50',
+        warning: 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-transparent hover:from-yellow-600 hover:to-orange-600 focus:ring-yellow-300 dark:focus:ring-yellow-900/50',
+        ghost: appStore.darkMode
+            ? 'bg-transparent text-gray-300 border-transparent hover:bg-gray-700 focus:ring-gray-700'
+            : 'bg-transparent text-gray-700 border-transparent hover:bg-gray-100 focus:ring-gray-200'
     }
 
     const sizes = {
-        sm: 'text-sm px-3 py-1.5',
-        md: 'text-sm px-4 py-2',
+        sm: 'text-sm px-3 py-2',
+        md: 'text-sm px-5 py-2.5',
         lg: 'text-base px-6 py-3'
     }
 

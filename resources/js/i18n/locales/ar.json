@@ -1,0 +1,292 @@
+{
+    "common": {
+        "search": "بحث...",
+        "save": "حفظ",
+        "cancel": "إلغاء",
+        "delete": "حذف",
+        "edit": "تعديل",
+        "view": "عرض",
+        "actions": "الإجراءات",
+        "create": "إنشاء",
+        "update": "تحديث",
+        "close": "إغلاق",
+        "confirm": "تأكيد",
+        "yes": "نعم",
+        "no": "لا",
+        "loading": "جاري التحميل...",
+        "noData": "لا توجد بيانات متاحة",
+        "previous": "السابق",
+        "next": "التالي",
+        "showing": "عرض",
+        "to": "إلى",
+        "of": "من",
+        "results": "نتيجة",
+        "selectAll": "تحديد الكل",
+        "unselectAll": "إلغاء تحديد الكل",
+        "error": "حدث خطأ",
+        "filters": "التصفية",
+        "clearFilters": "مسح التصفية",
+        "apply": "تطبيق",
+        "all": "الكل"
+    },
+    "settings": {
+        "title": "الإعدادات",
+        "subtitle": "إدارة إعدادات التطبيق",
+        "updateSuccess": "تم تحديث الإعدادات بنجاح",
+        "updateError": "فشل تحديث الإعدادات",
+        "loadError": "فشل تحميل الإعدادات",
+        "groups": {
+            "general": "عام",
+            "email": "البريد الإلكتروني",
+            "appearance": "المظهر",
+            "social": "وسائل التواصل",
+            "system": "النظام"
+        },
+        "fields": {
+            "app_name": "اسم التطبيق",
+            "app_description": "وصف التطبيق",
+            "app_logo": "شعار التطبيق",
+            "app_favicon": "الأيقونة المفضلة",
+            "mail_from_address": "عنوان البريد المرسل",
+            "mail_from_name": "اسم المرسل",
+            "appearance_primary_color": "اللون الأساسي",
+            "appearance_dark_mode_default": "الوضع الليلي افتراضياً",
+            "social_facebook": "رابط فيسبوك",
+            "social_twitter": "رابط تويتر",
+            "social_instagram": "رابط إنستغرام",
+            "social_linkedin": "رابط لينكد إن",
+            "system_maintenance_mode": "وضع الصيانة",
+            "system_allow_registration": "السماح بتسجيل المستخدمين",
+            "system_items_per_page": "عدد العناصر لكل صفحة"
+        }
+    },
+    "auth": {
+        "login": {
+            "title": "مرحباً بعودتك",
+            "subtitle": "سجل الدخول إلى حسابك للمتابعة",
+            "email": "البريد الإلكتروني",
+            "emailPlaceholder": "أدخل بريدك الإلكتروني",
+            "password": "كلمة المرور",
+            "passwordPlaceholder": "أدخل كلمة المرور",
+            "rememberMe": "تذكرني",
+            "forgotPassword": "نسيت كلمة المرور؟",
+            "loginButton": "تسجيل الدخول",
+            "orContinueWith": "أو المتابعة باستخدام",
+            "noAccount": "ليس لديك حساب؟",
+            "signUp": "سجل الآن",
+            "success": "تم تسجيل الدخول بنجاح! جاري التحويل...",
+            "error": "بيانات الاعتماد غير صحيحة. يرجى المحاولة مرة أخرى.",
+            "socialLogin": "المتابعة باستخدام {provider}"
+        },
+        "forgot": {
+            "title": "نسيت كلمة المرور؟",
+            "subtitle": "أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين",
+            "email": "البريد الإلكتروني",
+            "emailPlaceholder": "أدخل بريدك الإلكتروني",
+            "sendResetLink": "إرسال رابط إعادة التعيين",
+            "backToLogin": "العودة لتسجيل الدخول",
+            "emailSent": "تحقق من بريدك الإلكتروني",
+            "checkEmail": "لقد أرسلنا رابط إعادة تعيين كلمة المرور إلى {email}",
+            "emailSentSuccess": "تم إرسال بريد إعادة تعيين كلمة المرور بنجاح",
+            "error": "فشل إرسال البريد الإلكتروني. يرجى المحاولة مرة أخرى.",
+            "resendEmail": "إعادة إرسال البريد",
+            "resendIn": "إعادة الإرسال خلال {seconds} ثانية",
+            "emailResent": "تم إعادة إرسال البريد الإلكتروني بنجاح",
+            "resendError": "فشل إعادة إرسال البريد"
+        },
+        "otp": {
+            "title": "تحقق من حسابك",
+            "subtitle": "أدخل الرمز المكون من 6 أرقام المرسل إلى {email}",
+            "enterCode": "أدخل رمز التحقق",
+            "verify": "تحقق من الرمز",
+            "didntReceive": "لم تستلم الرمز؟",
+            "resendCode": "إعادة إرسال الرمز",
+            "resendIn": "إعادة الإرسال خلال {seconds} ثانية",
+            "backToLogin": "العودة لتسجيل الدخول",
+            "invalidCode": "رمز التحقق غير صحيح",
+            "success": "تم التحقق بنجاح!",
+            "error": "فشل التحقق. يرجى المحاولة مرة أخرى.",
+            "codeSent": "تم إرسال رمز التحقق بنجاح",
+            "resendError": "فشل إعادة إرسال الرمز"
+        },
+        "reset": {
+            "title": "إعادة تعيين كلمة المرور",
+            "subtitle": "قم بإنشاء كلمة مرور جديدة لحسابك",
+            "newPassword": "كلمة المرور الجديدة",
+            "passwordPlaceholder": "أدخل كلمة المرور الجديدة",
+            "confirmPassword": "تأكيد كلمة المرور",
+            "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور",
+            "resetButton": "إعادة تعيين كلمة المرور",
+            "success": "تم إعادة تعيين كلمة المرور بنجاح!",
+            "error": "فشل إعادة تعيين كلمة المرور",
+            "requirements": {
+                "title": "متطلبات كلمة المرور:",
+                "minLength": "8 أحرف على الأقل",
+                "uppercase": "حرف كبير واحد",
+                "lowercase": "حرف صغير واحد",
+                "number": "رقم واحد",
+                "special": "حرف خاص واحد"
+            },
+            "strength": {
+                "weak": "كلمة مرور ضعيفة",
+                "fair": "كلمة مرور مقبولة",
+                "good": "كلمة مرور جيدة",
+                "strong": "كلمة مرور قوية"
+            }
+        },
+        "logout": "تسجيل الخروج",
+        "register": "تسجيل جديد"
+    },
+    "sidebar": {
+        "dashboard": "لوحة التحكم",
+        "management": "الإدارة",
+        "users": "المستخدمون",
+        "roles": "الأدوار والصلاحيات",
+        "settings": "الإعدادات",
+        "analytics": "التحليلات",
+        "profile": "ملفي الشخصي"
+    },
+    "topbar": {
+        "adminPanel": "لوحة الإدارة",
+        "welcomeBack": "مرحبًا بعودتك، المشرف!",
+        "notifications": "الإشعارات",
+        "profile": "الملف الشخصي",
+        "settings": "الإعدادات",
+        "logout": "تسجيل الخروج"
+    },
+    "dashboard": {
+        "title": "لوحة التحكم",
+        "subtitle": "مرحبًا بك! إليك ما يحدث اليوم.",
+        "stats": {
+            "totalUsers": "إجمالي المستخدمين",
+            "activeProjects": "المشاريع النشطة",
+            "revenue": "الإيرادات",
+            "growth": "النمو"
+        },
+        "recentActivity": "النشاط الأخير",
+        "quickActions": "إجراءات سريعة",
+        "addUser": "إضافة مستخدم",
+        "viewReports": "عرض التقارير",
+        "manageSettings": "إدارة الإعدادات"
+    },
+    "users": {
+        "title": "المستخدمون",
+        "subtitle": "إدارة مستخدمي النظام",
+        "addNew": "إضافة مستخدم جديد",
+        "editUser": "تعديل المستخدم",
+        "deleteConfirm": "هل أنت متأكد من حذف هذا المستخدم؟",
+        "deleteMessage": "لا يمكن التراجع عن هذا الإجراء. سيتم حذف جميع البيانات المرتبطة بهذا المستخدم نهائياً.",
+        "deleteSuccess": "تم حذف المستخدم بنجاح",
+        "createSuccess": "تم إنشاء المستخدم بنجاح",
+        "updateSuccess": "تم تحديث المستخدم بنجاح",
+        "fields": {
+            "name": "الاسم",
+            "email": "البريد الإلكتروني",
+            "password": "كلمة المرور",
+            "passwordConfirmation": "تأكيد كلمة المرور",
+            "role": "الدور",
+            "status": "الحالة",
+            "createdAt": "تاريخ الإنشاء",
+            "updatedAt": "تاريخ التحديث"
+        },
+        "placeholders": {
+            "name": "أدخل الاسم الكامل",
+            "email": "أدخل البريد الإلكتروني",
+            "password": "أدخل كلمة المرور",
+            "passwordConfirmation": "أعد إدخال كلمة المرور",
+            "role": "اختر الدور",
+            "search": "البحث عن المستخدمين..."
+        }
+    },
+    "roles": {
+        "title": "الأدوار والصلاحيات",
+        "subtitle": "إدارة أدوار المستخدمين وصلاحياتهم",
+        "addNew": "إضافة دور جديد",
+        "editRole": "تعديل الدور",
+        "deleteConfirm": "هل أنت متأكد من حذف هذا الدور؟",
+        "deleteMessage": "لا يمكن التراجع عن هذا الإجراء. تأكد من عدم وجود مستخدمين مخصصين لهذا الدور.",
+        "deleteSuccess": "تم حذف الدور بنجاح",
+        "createSuccess": "تم إنشاء الدور بنجاح",
+        "updateSuccess": "تم تحديث الدور بنجاح",
+        "systemRole": "دور النظام",
+        "systemRoleInfo": "لا يمكن تعديل أو حذف أدوار النظام",
+        "fields": {
+            "name": "اسم الدور",
+            "permissions": "الصلاحيات",
+            "usersCount": "عدد المستخدمين",
+            "createdAt": "تاريخ الإنشاء",
+            "updatedAt": "تاريخ التحديث"
+        },
+        "placeholders": {
+            "name": "أدخل اسم الدور",
+            "permissions": "اختر الصلاحيات",
+            "search": "البحث عن الأدوار..."
+        },
+        "permissionsGroups": {
+            "users": "إدارة المستخدمين",
+            "roles": "إدارة الأدوار",
+            "settings": "الإعدادات"
+        }
+    },
+    "validation": {
+        "required": "هذا الحقل مطلوب",
+        "email": "يرجى إدخال بريد إلكتروني صحيح",
+        "minLength": "الحد الأدنى للطول هو {min} أحرف",
+        "maxLength": "الحد الأقصى للطول هو {max} أحرف"
+    },
+    "theme": {
+        "label": "لون المظهر",
+        "indigo": "نيلي",
+        "blue": "أزرق",
+        "purple": "بنفسجي",
+        "pink": "وردي",
+        "green": "أخضر",
+        "orange": "برتقالي",
+        "red": "أحمر"
+    },
+    "language": {
+        "label": "اللغة",
+        "en": "الإنجليزية",
+        "ar": "العربية"
+    },
+    "darkMode": {
+        "light": "الوضع الفاتح",
+        "dark": "الوضع الداكن"
+    },
+    "profile": {
+        "title": "ملفي الشخصي",
+        "subtitle": "إدارة معلوماتك الشخصية وكلمة المرور",
+        "personalInfo": "المعلومات الشخصية",
+        "security": "الأمان",
+        "changePassword": "تغيير كلمة المرور",
+        "updateSuccess": "تم تحديث الملف الشخصي بنجاح",
+        "updateError": "فشل تحديث الملف الشخصي",
+        "fields": {
+            "name": "الاسم الكامل",
+            "email": "البريد الإلكتروني",
+            "currentPassword": "كلمة المرور الحالية",
+            "newPassword": "كلمة المرور الجديدة",
+            "confirmPassword": "تأكيد كلمة المرور الجديدة"
+        },
+        "placeholders": {
+            "name": "أدخل اسمك الكامل",
+            "email": "أدخل بريدك الإلكتروني",
+            "currentPassword": "أدخل كلمة المرور الحالية",
+            "newPassword": "أدخل كلمة المرور الجديدة",
+            "confirmPassword": "أكد كلمة المرور الجديدة"
+        },
+        "password": {
+            "changed": "تم تغيير كلمة المرور بنجاح",
+            "changeFailed": "فشل تغيير كلمة المرور",
+            "currentIncorrect": "كلمة المرور الحالية غير صحيحة",
+            "requirements": {
+                "title": "متطلبات كلمة المرور:",
+                "minLength": "8 أحرف على الأقل",
+                "uppercase": "حرف كبير واحد",
+                "lowercase": "حرف صغير واحد",
+                "number": "رقم واحد",
+                "special": "حرف خاص واحد"
+            }
+        }
+    }
+}

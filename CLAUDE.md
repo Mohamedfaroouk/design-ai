@@ -1,392 +1,318 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
-This is a Laravel 12 + Vue 3 SaaS Dashboard application using:
-- **Backend**: Laravel 12 (PHP 8.2+)
-- **Frontend**: Vue 3 (Composition API) + Vite + Tailwind CSS 4.0
-- **State Management**: Pinia
-- **Routing**: Vue Router
-- **API Client**: Axios with interceptors
-- **Database**: SQLite (default)
-- **Queue**: Database-driven queue system
-- **Testing**: PHPUnit
-- **Animations**: @vueuse/motion
-- **Date Picker**: Flatpickr
-- **RTL/LTR Support**: tailwindcss-rtl
+Laravel 12 + Vue 3 SaaS Dashboard with:
+- **Backend**: Laravel 12 (PHP 8.2+), Sanctum auth, Spatie permissions
+- **Frontend**: Vue 3 + Vite + Tailwind CSS 4.0 + Pinia + Vue Router
+- **Features**: Dark mode, i18n (EN/AR), RTL/LTR, DataTable composable
+- **Database**: SQLite, queue system
 
 ## Development Commands
 
-### Starting Development Environment
 ```bash
-composer dev
-```
-This runs a concurrent process that starts:
-- PHP development server (`php artisan serve`)
-- Queue listener (`php artisan queue:listen --tries=1`)
-- Log viewer (`php artisan pail --timeout=0`)
-- Vite dev server (`npm run dev`)
-
-### Individual Services
-```bash
-# Start PHP server only
-php artisan serve
-
-# Start Vite dev server only
-npm run dev
-
-# Listen to queue jobs
-php artisan queue:listen --tries=1
-
-# View logs
-php artisan pail
-```
-
-### Testing
-```bash
-# Run all tests
-composer test
-
-# Run PHPUnit directly
-php artisan test
-
-# Run specific test file
-php artisan test tests/Feature/ExampleTest.php
-
-# Run specific test method
-php artisan test --filter test_method_name
-```
-
-### Building for Production
-```bash
-# Build frontend assets
-npm run build
-```
-
-### Code Quality
-```bash
-# Format code with Laravel Pint
-vendor/bin/pint
-
-# Run Pint on specific file
-vendor/bin/pint path/to/file.php
+composer dev          # Start all services (serve + queue + pail + vite)
+npm run dev           # Vite dev server only
+composer test         # Run tests
+npm run build         # Production build
+vendor/bin/pint       # Format code
 ```
 
 ## Project Structure
 
-### Application Layer
-- `app/Http/Controllers/` - HTTP controllers
-- `app/Models/` - Eloquent models (User model included by default)
-- `app/Providers/` - Service providers (AppServiceProvider)
-
-### Routes
-- `routes/web.php` - Web routes
-- `routes/console.php` - Artisan console commands
-
-### Views & Assets
-- `resources/views/` - Blade templates (welcome.blade.php is the default)
-- `resources/css/app.css` - Main CSS entry point (Tailwind)
-- `resources/js/app.js` - Main JavaScript entry point
-
-### Database
-- `database/migrations/` - Database migrations (users, cache, jobs tables included)
-- `database/factories/` - Model factories for testing/seeding
-- `database/seeders/` - Database seeders
-- `database/database.sqlite` - SQLite database file
-
-### Testing
-- `tests/Feature/` - Feature tests
-- `tests/Unit/` - Unit tests
-- Test environment uses in-memory SQLite database
-
-## Configuration
-
-### Environment
-- Uses SQLite database by default
-- Database queue connection
-- Log mailer for development
-- Session stored in database
-
-### Vite Configuration
-Entry points are configured in `vite.config.js`:
-- `resources/css/app.css`
-- `resources/js/main.js` (Vue app entry point)
-
-Hot module replacement is enabled for development.
-Path alias `@` is configured to point to `resources/js/`.
-
-## Common Laravel Artisan Commands
-
-```bash
-# Generate new controller
-php artisan make:controller ControllerName
-
-# Generate new model with migration
-php artisan make:model ModelName -m
-
-# Generate new migration
-php artisan make:migration create_table_name
-
-# Run migrations
-php artisan migrate
-
-# Rollback last migration
-php artisan migrate:rollback
-
-# Clear caches
-php artisan cache:clear
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-
-# Interactive tinker shell
-php artisan tinker
-
-# Generate application key (if needed)
-php artisan key:generate
 ```
+app/
+├── Http/Controllers/Admin|Client/  # Controllers (use HasDataTable trait)
+├── Services/Admin|Client/          # Business logic
+├── Http/Requests/Admin|Client/     # Validation
+├── Http/Resources/Admin|Client/    # API responses
+└── Models/                         # Eloquent models
 
-## Vue 3 Dashboard Architecture
-
-### Frontend Structure
-
-```
 resources/js/
-├── main.js                    # Vue app entry point
-├── router/
-│   └── index.js              # Vue Router configuration
-├── store/
-│   ├── index.js              # App & Toast stores
-│   └── users.js              # Users module store
-├── services/
-│   ├── api.js                # Axios wrapper with interceptors
-│   └── users.js              # Users API service
-├── composables/
-│   ├── useFetch.js           # Fetch data composable
-│   ├── useForm.js            # Form handling with validation
-│   └── useImageUpload.js     # Image upload with preview
-├── components/
-│   ├── inputs/               # Form input components
-│   │   ├── TextInput.vue
-│   │   ├── Textarea.vue
-│   │   ├── NumberInput.vue
-│   │   ├── DatePicker.vue
-│   │   ├── Select.vue
-│   │   ├── MultiSelect.vue
-│   │   ├── FileInput.vue
-│   │   └── ImagePicker.vue
-│   ├── tables/
-│   │   └── DataTable.vue     # Server-side table with pagination
-│   ├── layout/
-│   │   ├── Sidebar.vue
-│   │   ├── Topbar.vue
-│   │   └── AppLayout.vue
-│   └── ui/
-│       ├── Button.vue
-│       ├── Modal.vue
-│       ├── Toast.vue
-│       └── Spinner.vue
-├── pages/
-│   ├── Dashboard.vue
-│   └── Modules/
-│       └── Users/
-│           ├── UsersIndex.vue
-│           └── UsersForm.vue
-└── utils/
-    └── helpers.js            # Utility functions
+├── pages/admin|client/modules/     # Vue pages
+├── services/admin|client/          # API services
+├── store/admin|client/             # Pinia stores
+├── components/inputs|tables|ui/    # Reusable components
+└── i18n/locales/                   # Translations (en.json, ar.json)
 ```
 
-### Component Usage
+## Backend Architecture
 
-#### Input Components
-All input components support:
-- `v-model` for two-way binding
-- `label`, `placeholder`, `error`, `hint` props
-- `required`, `disabled`, `readonly` states
+### Required Components (Admin/Client separation)
 
-```vue
-<TextInput v-model="form.name" label="Name" :error="errors.name" required />
-<Select v-model="form.role" label="Role" :options="roleOptions" />
-<DatePicker v-model="form.date" label="Date" dateFormat="Y-m-d" />
-<ImagePicker v-model="form.avatar" label="Avatar" upload-url="/api/upload" />
+**Every module needs 4 files:**
+1. **Controller** - HTTP handling (use `HasDataTable` trait for index)
+2. **Service** - Business logic (DB transactions, file uploads)
+3. **Request** - Validation (Store/Update)
+4. **Resource** - API responses
+
+**❌ NO business logic in Controllers**
+**✅ ALL business logic in Services**
+
+### Permissions (Spatie)
+
+**Register in `bootstrap/app.php`:**
+```php
+$middleware->alias([
+    'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+]);
 ```
 
-#### DataTable Component
-Server-side table with built-in features:
+**Use in routes (Laravel 11+):**
+```php
+Route::middleware(['auth:sanctum', 'permission:products.view'])
+    ->get('/admin/products', [ProductController::class, 'index']);
+```
 
+**Default roles:** `admin` (all permissions), `client` (basic access)
+
+### Code Pattern Example
+
+**Controller (use HasDataTable):**
+```php
+use App\Traits\HasDataTable;
+
+public function index(Request $request): JsonResponse {
+    return $this->dataTableResponse(
+        query: Product::with(['category']),
+        request: $request,
+        resource: ProductResource::class,
+        searchable: ['name', 'sku', 'category.name'],
+        filterable: ['category_id', 'status']
+    );
+}
+
+public function store(StoreRequest $request): JsonResponse {
+    return response()->json([
+        'data' => new ProductResource($this->service->create($request->validated()))
+    ], 201);
+}
+```
+
+**Service (DB transactions):**
+```php
+public function create(array $data): Product {
+    return DB::transaction(fn() => Product::create($data));
+}
+```
+
+**Request (authorize + validate):**
+```php
+public function authorize(): bool {
+    return $this->user()->can('products.create');
+}
+
+public function rules(): array {
+    return ['name' => ['required', 'string', 'max:255']];
+}
+```
+
+**Artisan commands:**
+```bash
+php artisan make:controller Admin/ProductController --api
+php artisan make:request Admin/StoreProductRequest
+php artisan make:resource Admin/ProductResource
+# Service: create manually in app/Services/Admin/
+```
+
+### DataTable System
+
+**Laravel trait:** `app/Traits/HasDataTable.php`
+- Pagination, search, sort, filter (supports nested relations like `category.name`)
+- Query params: `?page=1&search=query&sort_by=name&category_id=5`
+
+**Vue composable:** `resources/js/composables/useDataTable.js`
+```js
+const { items, meta, loading, handleSearch, handleSort, handlePageChange, refresh } =
+  useDataTable(productsService.fetchList, { perPage: 15, sortBy: 'created_at' })
+```
+- Auto state management, URL sync, debounced search (300ms default)
+- Use with `<DataTable>` component for full functionality
+
+**DataTable with filters:**
 ```vue
 <DataTable
-  :columns="columns"
-  :data="items"
-  :meta="meta"
-  :loading="loading"
-  @search="handleSearch"
-  @sort="handleSort"
-  @page-change="handlePageChange"
+  :filterable="true"
+  @filter="handleFilter"
 >
-  <!-- Custom cell rendering -->
-  <template #cell-status="{ row }">
-    <span>{{ row.status }}</span>
-  </template>
-
-  <!-- Actions column -->
-  <template #actions="{ row }">
-    <button @click="edit(row)">Edit</button>
+  <template #filters="{ filters, updateFilter }">
+    <Select
+      :modelValue="filters.role"
+      @update:modelValue="updateFilter('role', $event)"
+      :label="$t('users.fields.role')"
+      :options="roleOptions"
+    />
   </template>
 </DataTable>
 ```
 
-#### UI Components
-
-```vue
-<!-- Button with variants and loading state -->
-<Button variant="primary" :loading="loading" @click="submit">Save</Button>
-
-<!-- Modal with header and footer slots -->
-<Modal v-model="showModal" title="Confirm Action">
-  <p>Modal content</p>
-  <template #footer>
-    <Button @click="confirm">Confirm</Button>
-  </template>
-</Modal>
-
-<!-- Spinner -->
-<Spinner size="lg" color="primary" text="Loading..." />
+**Filter handler:**
+```js
+const handleFilter = (filterData) => {
+  filters.value = { ...filters.value, ...filterData, page: 1 }
+  loadUsers()
+}
 ```
 
-### Composables
+### Authentication (Sanctum + OTP)
 
-#### useForm
-Form handling with validation and error management:
+**Default login:** `admin@example.com` / `password` (⚠️ change in production)
 
+**Endpoints:**
+- `POST /api/auth/login` → returns `{ user, token }`
+- `POST /api/auth/forgot-password` → sends OTP (6 digits, 10min expiry)
+- `POST /api/auth/verify-otp` → validates OTP
+- `POST /api/auth/reset-password` → resets password
+- `GET /api/auth/me` → current user + permissions
+- `POST /api/auth/logout`
+
+**Use token:** `Authorization: Bearer {token}`
+
+### Translations (EN/AR)
+
+**Backend:** `lang/{en|ar}/auth.php`, use `__('auth.login.success')`
+**Frontend:** `resources/js/i18n/locales/{en|ar}.json`, use `$t('users.title')`
+
+**Locale Middleware:** `app/Http/Middleware/SetLocale.php`
+- Priority: `?lang=ar` → Accept-Language header → User preference → Default (en)
+- Auto-registered in `bootstrap/app.php` for API routes
+
+**Frontend:** Sends Accept-Language header with every request
+- Reads from `localStorage.getItem('locale')`
+- Updated via `<LanguageSwitcher>` component
+
+## Vue 3 Frontend
+
+**Admin/Client separation:** Match backend structure
+- Pages: `pages/admin|client/modules/users/Index.vue`, `Form.vue`
+- Services: `services/admin|client/users.js`
+- Stores: `store/admin|client/users.js`
+
+### Components & Composables
+
+**Inputs (all with dark mode):** `TextInput`, `Select`, `DatePicker`, `ImagePicker`, etc.
+**UI:** `Button` (variants: primary/secondary/danger), `Modal`, `Toast`, `Spinner`
+**Table:** `DataTable` (search, sort, paginate)
+
+**Composables:**
 ```js
-const { form, errors, loading, getError, post, put } = useForm({
-  name: '',
-  email: ''
-})
-
-// Submit form
+// Form handling
+const { form, errors, getError, post, put } = useForm({ name: '', email: '' })
 await post('/api/users', {
   successMessage: 'User created',
-  onSuccess: (response) => router.push('/users')
+  onSuccess: () => router.push('/users')
 })
-```
 
-#### useFetch
-Fetch data with loading state:
+// Display errors in template
+<TextInput :error="getError('email')" />
 
-```js
-const { data, loading, error, execute, refresh } = useFetch('/api/users')
-```
+// Data fetching
+const { data, loading, refresh } = useFetch('/api/users')
 
-#### useImageUpload
-Image upload with preview and progress:
-
-```js
-const { preview, uploading, progress, handleFileSelect, upload } = useImageUpload()
-```
-
-### State Management (Pinia)
-
-#### Toast Store
-```js
-import { useToastStore } from '@/store'
-
+// Toasts
 const toast = useToastStore()
-toast.success('Operation successful')
-toast.error('Operation failed')
-toast.warning('Warning message')
-toast.info('Info message')
+toast.success('Saved!')
 ```
 
-#### App Store
-```js
-import { useAppStore } from '@/store'
-
-const appStore = useAppStore()
-appStore.toggleSidebar()
-appStore.setDirection('rtl') // or 'ltr'
-```
-
-#### Module Stores
-Each module has its own Pinia store with standard actions:
-
-```js
-import { useUsersStore } from '@/store/users'
-
-const usersStore = useUsersStore()
-await usersStore.fetchList({ page: 1, search: 'query' })
-await usersStore.fetchOne(id)
-await usersStore.create(data)
-await usersStore.update(id, data)
-await usersStore.delete(id)
-```
-
-### API Service
-
-The API service (`services/api.js`) provides:
-- Automatic CSRF token handling
-- Bearer token authentication
-- Error normalization
-- Request/response interceptors
-
-```js
-import api from '@/services/api'
-
-const data = await api.get('/users', { page: 1 })
-await api.post('/users', userData)
-await api.put('/users/1', userData)
-await api.delete('/users/1')
-await api.upload('/upload', formData, onProgress)
-```
-
-### RTL/LTR Support
-
-The dashboard automatically detects direction from Laravel locale:
-- Arabic (`ar`) → RTL
-- All others → LTR
-
-Toggle direction at runtime:
+**Pinia stores:**
 ```js
 const appStore = useAppStore()
-appStore.setDirection('rtl') // or 'ltr'
+appStore.toggleDarkMode()  // Dark mode
+appStore.setDirection('rtl')  // RTL/LTR
 ```
 
-All components are RTL-ready using Tailwind's logical properties:
-- Use `start`/`end` instead of `left`/`right`
-- Use `ms`/`me` instead of `ml`/`mr`
+**RTL Support:** Use `ms`/`me` (margin-start/end) instead of `ml`/`mr`
 
-### Creating New Modules
+### Creating New Modules - Quick Steps
 
-To add a new module (e.g., "Products"):
+**Backend:**
+1. Controller (HasDataTable), Service, Request, Resource in `app/.../Admin|Client/`
+2. Routes in `routes/api.php` with permissions
 
-1. Create service: `resources/js/services/products.js`
-2. Create store: `resources/js/store/products.js`
-3. Create pages: `resources/js/pages/Modules/Products/`
-4. Add routes in `resources/js/router/index.js`
-5. Add menu item in `resources/js/components/layout/Sidebar.vue`
-6. Create API endpoints in `routes/api.php`
+**Frontend:**
+1. Service in `services/admin|client/products.js`
+2. Store in `store/admin|client/products.js` (optional)
+3. Index page with `useDataTable` + `<DataTable>`
+4. Form page with `useForm` + input components
+5. Routes in `router/admin.js`
+6. Add menu item + translations
 
-### Utility Functions
+**Checklist:** Controller, Service, Request, Resource, routes, service, pages, router, translations (EN/AR), dark mode support
 
-Available in `resources/js/utils/helpers.js`:
-- `formatDate(date, format)` - Format dates
-- `formatCurrency(amount)` - Format currency
-- `formatFileSize(bytes)` - Format file sizes
-- `truncate(text, length)` - Truncate text
-- `debounce(func, wait)` - Debounce function
-- `capitalize(str)` - Capitalize string
-- `getInitials(name)` - Get name initials
-- And more...
+## Development Standards (CRITICAL)
 
-## Architecture Notes
+**Every new feature MUST have:**
 
-- This is a Laravel 12 + Vue 3 SPA application
-- Backend serves a single blade template (`resources/views/app.blade.php`)
-- All routing is handled by Vue Router on the frontend
-- API endpoints in `routes/api.php` provide data to Vue components
-- Frontend uses Vite for asset bundling with Tailwind CSS 4.0
-- Queue jobs are processed via database driver (requires queue listener to be running)
-- The concurrent dev command (`composer dev`) is the recommended way to run the full stack during development
+**1. 🌙 Dark Mode:**
+```vue
+:class="appStore.darkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'"
+```
+- Use `gray-800/900` (dark) vs `white/gray-50` (light)
+- Add `transition-colors` for smooth switching
+- See `COLOR_SYSTEM.md` for color system
+
+**2. 🌐 Translations:**
+```vue
+{{ $t('users.title') }}  <!-- Always use $t() -->
+```
+- Update `en.json` + `ar.json`
+- Never hardcode text
+
+**3. 📊 Use Existing Components:**
+- ✅ `<TextInput>`, `<Select>`, `<DataTable>`, `<Button>`
+- ❌ Raw `<input>`, `<table>`, `<button>`
+
+**4. 🎨 RTL Support:**
+- ✅ Use `ms`/`me`, `ps`/`pe`, `start`/`end`
+- ❌ Don't use `ml`/`mr`, `pl`/`pr`, `left`/`right`
+
+## Error Handling Best Practices
+
+### ✅ DO: Use `useForm` composable for forms
+```vue
+<script setup>
+const { form, errors, getError, post, put } = useForm({ email: '', password: '' })
+
+const handleSubmit = async () => {
+  try {
+    await post('/api/users', {
+      successMessage: 'User created',
+      onSuccess: () => router.push('/users')
+    })
+  } catch (error) {
+    // Errors are auto-handled:
+    // - Field errors shown inline via getError()
+    // - Non-422 errors show toast
+  }
+}
+</script>
+
+<template>
+  <TextInput v-model="form.email" :error="getError('email')" />
+  <Button @click="handleSubmit" :loading="loading">Submit</Button>
+</template>
+```
+
+### ❌ DON'T: Manually handle errors
+```js
+// ❌ WRONG - Don't manually set errors
+catch (error) {
+  if (error.errors) {
+    Object.keys(error.errors).forEach(key => {
+      errors.value[key] = error.errors[key]
+    })
+  }
+  toast.error(error.message)
+}
+
+// ✅ CORRECT - useForm handles it automatically
+catch (error) {
+  // Leave empty or add custom logic only if needed
+}
+```
+
+### How Error Handling Works
+1. **422 Validation errors** → Shown inline under fields (no toast)
+2. **Other errors (401, 403, 500, etc.)** → Toast notification
+3. **Backend message preserved** → Custom validation messages display correctly
+4. **Automatic error clearing** → Errors reset on next submit

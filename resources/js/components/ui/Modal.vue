@@ -11,7 +11,7 @@
             <div
                 v-if="modelValue"
                 @click="handleBackdropClick"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 bg-opacity-50 p-4"
             >
                 <Transition
                     enter-active-class="transition-all duration-300"
@@ -24,18 +24,30 @@
                     <div
                         v-if="modelValue"
                         @click.stop
-                        class="bg-white rounded-lg shadow-xl w-full"
-                        :class="sizeClass"
+                        class="rounded-lg shadow-xl w-full transition-colors"
+                        :class="[
+                            sizeClass,
+                            appStore.darkMode
+                                ? 'bg-gray-800 border border-gray-700'
+                                : 'bg-white'
+                        ]"
                     >
                         <!-- Header -->
-                        <div v-if="$slots.header || title" class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                        <div v-if="$slots.header || title" class="flex items-center justify-between px-6 py-4 border-b transition-colors"
+                             :class="appStore.darkMode ? 'border-gray-700' : 'border-gray-200'">
                             <slot name="header">
-                                <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
+                                <h3 class="text-lg font-semibold transition-colors"
+                                    :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
+                                    {{ title }}
+                                </h3>
                             </slot>
                             <button
                                 v-if="closable"
                                 @click="close"
-                                class="text-gray-400 hover:text-gray-600 transition-colors"
+                                class="transition-colors"
+                                :class="appStore.darkMode
+                                    ? 'text-gray-400 hover:text-gray-200'
+                                    : 'text-gray-400 hover:text-gray-600'"
                             >
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path
@@ -54,7 +66,10 @@
                         </div>
 
                         <!-- Footer -->
-                        <div v-if="$slots.footer" class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+                        <div v-if="$slots.footer" class="flex items-center justify-end gap-3 px-6 py-4 border-t transition-colors"
+                             :class="appStore.darkMode
+                                 ? 'border-gray-700 bg-gray-900/50'
+                                 : 'border-gray-200 bg-gray-50'">
                             <slot name="footer"></slot>
                         </div>
                     </div>
@@ -66,6 +81,9 @@
 
 <script setup>
 import { computed, watch } from 'vue'
+import { useAppStore } from '@/store'
+
+const appStore = useAppStore()
 
 const props = defineProps({
     modelValue: {

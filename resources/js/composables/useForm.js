@@ -25,7 +25,10 @@ export function useForm(initialData = {}) {
     }
 
     const getError = (field) => {
-        return errors.value[field]?.[0] || ''
+        const error = errors.value[field]
+        if (!error) return ''
+        // Handle both array and string errors
+        return Array.isArray(error) ? error[0] : error
     }
 
     const reset = () => {
@@ -56,14 +59,20 @@ export function useForm(initialData = {}) {
 
             return response
         } catch (err) {
+            // Set field-specific validation errors
             if (err.errors) {
                 setErrors(err.errors)
             }
 
+            // Show toast error (general message)
             if (options.onError) {
                 options.onError(err)
             } else if (!options.silent) {
-                toast.error(err.message || 'An error occurred')
+                // Don't show toast if it's just validation errors (422)
+                // Field errors will be shown inline
+                if (err.status !== 422) {
+                    toast.error(err.message || 'An error occurred')
+                }
             }
 
             throw err

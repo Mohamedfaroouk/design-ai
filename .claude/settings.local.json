@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(php artisan make:migration:*)",
+      "Bash(php artisan make:seeder:*)",
+      "Bash(php artisan make:model:*)",
+      "Bash(php artisan make:request:*)",
+      "Bash(php artisan make:controller:*)",
+      "Bash(php artisan make:middleware:*)",
+      "Bash(php artisan route:list:*)",
+      "Bash(php artisan make:resource:*)",
+      "Bash(php artisan:*)"
     ],
     "deny": [],
     "ask": []

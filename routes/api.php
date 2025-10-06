@@ -1,91 +1,85 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Authentication Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('auth')->group(function () {
+    // Public routes (guest only)
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
+
+    // Protected routes (authenticated users)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+    });
+});
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Users API routes (example - implement these controllers as needed)
-Route::prefix('users')->group(function () {
-    Route::get('/', function () {
-        // Example response - replace with actual controller
-        return response()->json([
-            'data' => [
-                [
-                    'id' => 1,
-                    'name' => 'John Doe',
-                    'email' => 'john@example.com',
-                    'role' => 'admin',
-                    'status' => 'active',
-                    'created_at' => now()->subDays(30)->toISOString()
-                ],
-                [
-                    'id' => 2,
-                    'name' => 'Jane Smith',
-                    'email' => 'jane@example.com',
-                    'role' => 'user',
-                    'status' => 'active',
-                    'created_at' => now()->subDays(15)->toISOString()
-                ],
-                [
-                    'id' => 3,
-                    'name' => 'Mike Johnson',
-                    'email' => 'mike@example.com',
-                    'role' => 'moderator',
-                    'status' => 'inactive',
-                    'created_at' => now()->subDays(7)->toISOString()
-                ]
-            ],
-            'meta' => [
-                'current_page' => 1,
-                'last_page' => 1,
-                'per_page' => 15,
-                'total' => 3,
-                'from' => 1,
-                'to' => 3
-            ]
-        ]);
+/*
+|--------------------------------------------------------------------------
+| Profile Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:sanctum')->prefix('profile')->group(function () {
+    Route::get('/', [ProfileController::class, 'show']);
+    Route::put('/', [ProfileController::class, 'update']);
+    Route::put('/change-password', [ProfileController::class, 'changePassword']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+    // Users Management
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->middleware('permission:users.view');
+        Route::post('/', [UserController::class, 'store'])->middleware('permission:users.create');
+        Route::get('/{id}', [UserController::class, 'show'])->middleware('permission:users.view');
+        Route::put('/{id}', [UserController::class, 'update'])->middleware('permission:users.edit');
+        Route::delete('/{id}', [UserController::class, 'destroy'])->middleware('permission:users.delete');
     });
 
-    Route::get('/{id}', function ($id) {
-        return response()->json([
-            'data' => [
-                'id' => $id,
-                'name' => 'John Doe',
-                'email' => 'john@example.com',
-                'role' => 'admin',
-                'status' => 'active',
-                'phone' => '+1234567890',
-                'date_of_birth' => '1990-01-01',
-                'avatar' => '',
-                'bio' => 'Sample bio text',
-                'created_at' => now()->subDays(30)->toISOString()
-            ]
-        ]);
+    // Roles Management
+    Route::prefix('roles')->group(function () {
+        Route::get('/', [RoleController::class, 'index'])->middleware('permission:roles.view');
+        Route::post('/', [RoleController::class, 'store'])->middleware('permission:roles.create');
+        Route::get('/permissions', [RoleController::class, 'permissions'])->middleware('permission:roles.view');
+        Route::get('/{id}', [RoleController::class, 'show'])->middleware('permission:roles.view');
+        Route::put('/{id}', [RoleController::class, 'update'])->middleware('permission:roles.edit');
+        Route::delete('/{id}', [RoleController::class, 'destroy'])->middleware('permission:roles.delete');
     });
 
-    Route::post('/', function (Request $request) {
-        return response()->json([
-            'message' => 'User created successfully',
-            'data' => array_merge(['id' => rand(1000, 9999)], $request->all())
-        ], 201);
-    });
-
-    Route::put('/{id}', function (Request $request, $id) {
-        return response()->json([
-            'message' => 'User updated successfully',
-            'data' => array_merge(['id' => $id], $request->all())
-        ]);
-    });
-
-    Route::delete('/{id}', function ($id) {
-        return response()->json([
-            'message' => 'User deleted successfully'
-        ]);
+    // Settings Management
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [SettingController::class, 'index'])->middleware('permission:settings.view');
+        Route::put('/batch', [SettingController::class, 'updateBatch'])->middleware('permission:settings.update');
     });
 });
+
+// Public settings endpoint
+Route::get('/settings/public', [SettingController::class, 'public']);
 
 // Upload endpoint (example)
 Route::post('/upload/avatar', function (Request $request) {

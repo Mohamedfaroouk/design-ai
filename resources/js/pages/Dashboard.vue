@@ -1,6 +1,9 @@
 <template>
     <div v-motion-fade>
-        <h1 class="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
+        <h1 class="text-3xl font-bold mb-6 transition-colors"
+            :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
+            Dashboard
+        </h1>
 
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -10,12 +13,19 @@
                 v-motion
                 :initial="{ opacity: 0, y: 20 }"
                 :enter="{ opacity: 1, y: 0, transition: { delay: index * 100 } }"
-                class="bg-white rounded-lg shadow p-6"
+                class="rounded-lg shadow p-6 transition-colors"
+                :class="appStore.darkMode ? 'bg-gray-800' : 'bg-white'"
             >
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-600">{{ stat.label }}</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-2">{{ stat.value }}</p>
+                        <p class="text-sm font-medium transition-colors"
+                           :class="appStore.darkMode ? 'text-gray-400' : 'text-gray-600'">
+                            {{ stat.label }}
+                        </p>
+                        <p class="text-2xl font-bold mt-2 transition-colors"
+                           :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
+                            {{ stat.value }}
+                        </p>
                     </div>
                     <div
                         class="w-12 h-12 rounded-full flex items-center justify-center"
@@ -27,11 +37,16 @@
                 <div class="mt-4 flex items-center text-sm">
                     <span
                         class="font-medium"
-                        :class="stat.trend === 'up' ? 'text-green-600' : 'text-red-600'"
+                        :class="stat.trend === 'up'
+                            ? (appStore.darkMode ? 'text-green-400' : 'text-green-600')
+                            : (appStore.darkMode ? 'text-red-400' : 'text-red-600')"
                     >
                         {{ stat.change }}
                     </span>
-                    <span class="text-gray-600 ms-2">from last month</span>
+                    <span class="ms-2 transition-colors"
+                          :class="appStore.darkMode ? 'text-gray-400' : 'text-gray-600'">
+                        from last month
+                    </span>
                 </div>
             </div>
         </div>
@@ -39,33 +54,53 @@
         <!-- Charts/Tables Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Recent Activity -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
+            <div class="rounded-lg shadow p-6 transition-colors"
+                 :class="appStore.darkMode ? 'bg-gray-800' : 'bg-white'">
+                <h2 class="text-lg font-semibold mb-4 transition-colors"
+                    :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
+                    Recent Activity
+                </h2>
                 <div class="space-y-4">
                     <div
                         v-for="(activity, index) in recentActivity"
                         :key="index"
-                        class="flex items-start gap-4 pb-4 border-b border-gray-200 last:border-0"
+                        class="flex items-start gap-4 pb-4 border-b last:border-0 transition-colors"
+                        :class="appStore.darkMode ? 'border-gray-700' : 'border-gray-200'"
                     >
                         <div
-                            class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100"
+                            class="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+                            :class="appStore.darkMode ? 'bg-gray-700' : 'bg-gray-100'"
                         >
-                            <span class="text-sm font-medium text-gray-700">
+                            <span class="text-sm font-medium transition-colors"
+                                  :class="appStore.darkMode ? 'text-gray-300' : 'text-gray-700'">
                                 {{ activity.user.charAt(0) }}
                             </span>
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-900">{{ activity.user }}</p>
-                            <p class="text-sm text-gray-600">{{ activity.action }}</p>
-                            <p class="text-xs text-gray-500 mt-1">{{ activity.time }}</p>
+                            <p class="text-sm font-medium transition-colors"
+                               :class="appStore.darkMode ? 'text-gray-200' : 'text-gray-900'">
+                                {{ activity.user }}
+                            </p>
+                            <p class="text-sm transition-colors"
+                               :class="appStore.darkMode ? 'text-gray-400' : 'text-gray-600'">
+                                {{ activity.action }}
+                            </p>
+                            <p class="text-xs mt-1 transition-colors"
+                               :class="appStore.darkMode ? 'text-gray-500' : 'text-gray-500'">
+                                {{ activity.time }}
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Quick Actions -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div class="rounded-lg shadow p-6 transition-colors"
+                 :class="appStore.darkMode ? 'bg-gray-800' : 'bg-white'">
+                <h2 class="text-lg font-semibold mb-4 transition-colors"
+                    :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
+                    Quick Actions
+                </h2>
                 <div class="grid grid-cols-2 gap-4">
                     <Button
                         variant="primary"
@@ -129,7 +164,10 @@
 
 <script setup>
 import { h } from 'vue'
+import { useAppStore } from '@/store'
 import Button from '@/components/ui/Button.vue'
+
+const appStore = useAppStore()
 
 const stats = [
     {

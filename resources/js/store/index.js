@@ -52,7 +52,8 @@ export const useToastStore = defineStore('toast', {
 export const useAppStore = defineStore('app', {
     state: () => ({
         sidebarOpen: true,
-        direction: 'ltr'
+        direction: localStorage.getItem('direction') || 'ltr',
+        darkMode: localStorage.getItem('darkMode') === 'true'
     }),
 
     actions: {
@@ -63,6 +64,26 @@ export const useAppStore = defineStore('app', {
         setDirection(dir) {
             this.direction = dir
             document.documentElement.setAttribute('dir', dir)
+            localStorage.setItem('direction', dir)
+        },
+
+        toggleDarkMode() {
+            this.darkMode = !this.darkMode
+            if (this.darkMode) {
+                document.documentElement.classList.add('dark')
+            } else {
+                document.documentElement.classList.remove('dark')
+            }
+            localStorage.setItem('darkMode', this.darkMode)
+        },
+
+        initializeTheme() {
+            // Initialize dark mode
+            if (this.darkMode) {
+                document.documentElement.classList.add('dark')
+            }
+            // Initialize direction
+            document.documentElement.setAttribute('dir', this.direction)
         }
     }
 })
