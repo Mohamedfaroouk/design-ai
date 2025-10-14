@@ -22,18 +22,41 @@ vendor/bin/pint       # Format code
 
 ```
 app/
-├── Http/Controllers/Admin|Client/  # Controllers (use HasDataTable trait)
-├── Services/Admin|Client/          # Business logic
-├── Http/Requests/Admin|Client/     # Validation
-├── Http/Resources/Admin|Client/    # API responses
+├── Http/Controllers/
+│   ├── Admin/                      # Admin controllers (use HasDataTable trait)
+│   └── Client/                     # Client controllers (use HasDataTable trait)
+├── Services/
+│   ├── Admin/                      # Admin business logic
+│   └── Client/                     # Client business logic
+├── Http/Requests/
+│   ├── Admin/                      # Admin validation rules
+│   └── Client/                     # Client validation rules
+├── Http/Resources/
+│   ├── Admin/                      # Admin API responses
+│   └── Client/                     # Client API responses
 └── Models/                         # Eloquent models
 
 resources/js/
-├── pages/admin|client/modules/     # Vue pages
-├── services/admin|client/          # API services
-├── store/admin|client/             # Pinia stores
-├── components/inputs|tables|ui/    # Reusable components
-└── i18n/locales/                   # Translations (en.json, ar.json)
+├── pages/
+│   ├── Modules/
+│   │   ├── admin/                  # Admin Vue pages (Users, Roles, Settings)
+│   │   └── client/                 # Client Vue pages (ImageWizard, etc.)
+│   ├── auth/                       # Auth pages (Login, ForgotPassword, etc.)
+│   ├── Profile/                    # Profile pages
+│   └── Dashboard.vue               # Main dashboard
+├── services/
+│   ├── admin/                      # Admin API services
+│   └── client/                     # Client API services
+├── store/
+│   ├── admin/                      # Admin Pinia stores
+│   └── client/                     # Client Pinia stores
+├── components/
+│   ├── inputs/                     # Input components
+│   ├── tables/                     # Table components
+│   └── ui/                         # UI components
+├── composables/                    # Reusable composables
+├── i18n/locales/                   # Translations (en.json, ar.json)
+└── router/                         # Vue Router configuration
 ```
 
 ## Backend Architecture
@@ -123,6 +146,9 @@ php artisan make:resource Admin/ProductResource
 
 **Vue composable:** `resources/js/composables/useDataTable.js`
 ```js
+// ✅ CORRECT - Named import
+import { useDataTable } from '@/composables/useDataTable'
+
 const { items, meta, loading, handleSearch, handleSort, handlePageChange, refresh } =
   useDataTable(productsService.fetchList, { perPage: 15, sortBy: 'created_at' })
 ```
@@ -156,7 +182,9 @@ const handleFilter = (filterData) => {
 
 ### Authentication (Sanctum + OTP)
 
-**Default login:** `admin@example.com` / `password` (⚠️ change in production)
+**Default users:**
+- **Admin:** `admin@example.com` / `password` (⚠️ change in production)
+- **Client:** `client@example.com` / `password` (⚠️ change in production)
 
 **Endpoints:**
 - `POST /api/auth/login` → returns `{ user, token }`
@@ -184,9 +212,10 @@ const handleFilter = (filterData) => {
 ## Vue 3 Frontend
 
 **Admin/Client separation:** Match backend structure
-- Pages: `pages/admin|client/modules/users/Index.vue`, `Form.vue`
-- Services: `services/admin|client/users.js`
-- Stores: `store/admin|client/users.js`
+- **Admin Pages:** `pages/Modules/admin/Users/UsersIndex.vue`, `UsersForm.vue`
+- **Client Pages:** `pages/Modules/client/ImageWizard.vue`
+- **Services:** `services/admin/users.js`, `services/client/aiImage.js`
+- **Stores:** `store/admin/users.js`, `store/client/ai.js`
 
 ### Components & Composables
 
@@ -216,28 +245,273 @@ toast.success('Saved!')
 
 **Pinia stores:**
 ```js
+// ✅ CORRECT - Import from store/index
+import { useAppStore } from '@/store/index'
+import { useToastStore } from '@/store/index'
+
 const appStore = useAppStore()
 appStore.toggleDarkMode()  // Dark mode
 appStore.setDirection('rtl')  // RTL/LTR
+
+const toast = useToastStore()
+toast.success('Saved!')
 ```
+
+**⚠️ IMPORTANT - Store Imports:**
+- ✅ Always import from `@/store/index` for `useAppStore` and `useToastStore`
+- ❌ Don't use `@/store/app` or `@/store/toast` - these files don't exist
+- Both stores are exported from the single `store/index.js` file
 
 **RTL Support:** Use `ms`/`me` (margin-start/end) instead of `ml`/`mr`
 
-### Creating New Modules - Quick Steps
+### Creating New Modules - REQUIRED STRUCTURE
 
-**Backend:**
-1. Controller (HasDataTable), Service, Request, Resource in `app/.../Admin|Client/`
-2. Routes in `routes/api.php` with permissions
+⚠️ **CRITICAL: ALL features MUST follow this exact structure**
 
-**Frontend:**
-1. Service in `services/admin|client/products.js`
-2. Store in `store/admin|client/products.js` (optional)
-3. Index page with `useDataTable` + `<DataTable>`
-4. Form page with `useForm` + input components
-5. Routes in `router/admin.js`
-6. Add menu item + translations
+#### Backend (4 files required):
 
-**Checklist:** Controller, Service, Request, Resource, routes, service, pages, router, translations (EN/AR), dark mode support
+1. **Controller** - `app/Http/Controllers/Admin|Client/ProductController.php`
+   ```bash
+   php artisan make:controller Admin/ProductController --api
+   ```
+   - Use `HasDataTable` trait for index method
+   - Keep it thin - only HTTP handling
+
+2. **Service** - `app/Services/Admin|Client/ProductService.php`
+   ```bash
+   # Create manually
+   ```
+   - ALL business logic goes here
+   - Use DB transactions
+   - Handle file uploads
+
+3. **Request** - `app/Http/Requests/Admin|Client/StoreProductRequest.php`
+   ```bash
+   php artisan make:request Admin/StoreProductRequest
+   ```
+   - Validation rules
+   - Authorization logic
+
+4. **Resource** - `app/Http/Resources/Admin|Client/ProductResource.php`
+   ```bash
+   php artisan make:resource Admin/ProductResource
+   ```
+   - API response formatting
+
+5. **Routes** - Add to `routes/api.php` with permissions
+
+#### Frontend (3 files required):
+
+1. **Service** - `resources/js/services/admin|client/products.js`
+   ```js
+   import api from '../api'
+
+   export default {
+     fetchList(params = {}) {
+       return api.get('/admin/products', params)  // ✅ Pass params directly
+     },
+     fetchOne(id) {
+       return api.get(`/admin/products/${id}`)
+     },
+     create(data) {
+       return api.post('/admin/products', data)
+     },
+     update(id, data) {
+       return api.put(`/admin/products/${id}`, data)
+     },
+     delete(id) {
+       return api.delete(`/admin/products/${id}`)
+     }
+   }
+   ```
+   **⚠️ IMPORTANT:** Always pass `params` directly to `api.get()`, NOT `{ params }`
+
+2. **Pinia Store** - `resources/js/store/admin|client/products.js` **(REQUIRED)**
+   ```js
+   import { defineStore } from 'pinia'
+   import productsService from '@/services/admin/products'
+
+   export const useAdminProductsStore = defineStore('adminProducts', {
+     state: () => ({
+       products: [],
+       meta: null,
+       loading: false,
+       error: null
+     }),
+
+     actions: {
+       async fetchList(params = {}) {
+         this.loading = true
+         this.error = null
+         try {
+           const response = await productsService.fetchList(params)
+           this.products = response.data
+           this.meta = response.meta
+           return response
+         } catch (error) {
+           this.error = error.message
+           throw error
+         } finally {
+           this.loading = false
+         }
+       },
+
+       async create(data) {
+         this.loading = true
+         try {
+           const response = await productsService.create(data)
+           return response
+         } catch (error) {
+           this.error = error.message
+           throw error
+         } finally {
+           this.loading = false
+         }
+       },
+
+       async update(id, data) {
+         this.loading = true
+         try {
+           const response = await productsService.update(id, data)
+           return response
+         } catch (error) {
+           this.error = error.message
+           throw error
+         } finally {
+           this.loading = false
+         }
+       },
+
+       async delete(id) {
+         this.loading = true
+         try {
+           const response = await productsService.delete(id)
+           this.products = this.products.filter(p => p.id !== id)
+           return response
+         } catch (error) {
+           this.error = error.message
+           throw error
+         } finally {
+           this.loading = false
+         }
+       }
+     }
+   })
+   ```
+
+3. **Index Page** - `resources/js/pages/Modules/admin|client/Products/ProductsIndex.vue`
+   ```vue
+   <script setup>
+   import { ref, computed, onMounted } from 'vue'
+   import { useI18n } from 'vue-i18n'
+   import { useAppStore } from '@/store/index'
+   import { useToastStore } from '@/store/index'
+   import { useAdminProductsStore } from '@/store/admin/products'
+   import DataTable from '@/components/tables/DataTable.vue'
+
+   const { t } = useI18n()
+   const appStore = useAppStore()
+   const toast = useToastStore()
+   const productsStore = useAdminProductsStore()
+
+   // Filters state
+   const filters = ref({
+     search: '',
+     sortBy: 'created_at',
+     sortOrder: 'desc',
+     page: 1,
+     perPage: 15
+   })
+
+   // Table columns
+   const columns = computed(() => [
+     { key: 'name', label: t('products.fields.name'), sortable: true },
+     { key: 'created_at', label: t('products.fields.createdAt'), sortable: true }
+   ])
+
+   // Load data
+   const loadProducts = async () => {
+     try {
+       await productsStore.fetchList(filters.value)
+     } catch (error) {
+       toast.error(error.message || t('common.error'))
+     }
+   }
+
+   // Event handlers
+   const handleSearch = (query) => {
+     filters.value.search = query
+     filters.value.page = 1
+     loadProducts()
+   }
+
+   const handleSort = ({ column, order }) => {
+     filters.value.sortBy = column
+     filters.value.sortOrder = order
+     loadProducts()
+   }
+
+   const handlePageChange = (page) => {
+     filters.value.page = page
+     loadProducts()
+   }
+
+   onMounted(() => {
+     loadProducts()
+   })
+   </script>
+
+   <template>
+     <DataTable
+       :columns="columns"
+       :data="productsStore.products"
+       :meta="productsStore.meta"
+       :loading="productsStore.loading"
+       @search="handleSearch"
+       @sort="handleSort"
+       @page-change="handlePageChange"
+     />
+   </template>
+   ```
+
+4. **Form Page** - `resources/js/pages/Modules/admin|client/Products/ProductsForm.vue`
+   - Use `useForm` composable for form handling
+   - See "Error Handling Best Practices" section
+
+5. **Router** - Add routes to `resources/js/router/index.js`
+
+6. **Translations** - Add to `resources/js/i18n/locales/en.json` and `ar.json`
+
+#### Key Patterns (MUST FOLLOW):
+
+**❌ DON'T use `useDataTable` composable:**
+```js
+// ❌ WRONG
+const { items, meta } = useDataTable(service.fetchList)
+```
+
+**✅ DO use Pinia store pattern:**
+```js
+// ✅ CORRECT
+const productsStore = useAdminProductsStore()
+const filters = ref({ page: 1, search: '' })
+await productsStore.fetchList(filters.value)
+```
+
+**Structure Reference:**
+- **Admin Example:** `pages/Modules/admin/Roles/RolesIndex.vue` + `store/admin/roles.js`
+- **Client Example:** `pages/Modules/client/AiGenerationIndex.vue` + `store/client/aiGeneration.js`
+
+**Checklist:**
+- ✅ Backend: Controller, Service, Request, Resource, Routes
+- ✅ Frontend: Service file (correct params handling)
+- ✅ Frontend: Pinia store (state + actions)
+- ✅ Frontend: Index page (store pattern, not useDataTable)
+- ✅ Frontend: Form page (useForm composable)
+- ✅ Router configuration
+- ✅ Translations (EN/AR)
+- ✅ Dark mode support
+- ✅ Import stores from `@/store/index` for useAppStore/useToastStore
 
 ## Development Standards (CRITICAL)
 

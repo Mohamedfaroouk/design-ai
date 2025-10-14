@@ -144,7 +144,9 @@
         "roles": "Roles & Permissions",
         "settings": "Settings",
         "analytics": "Analytics",
-        "profile": "My Profile"
+        "profile": "My Profile",
+        "ai_image_generator": "AI Image Generator",
+        "ai_generations": "Generation History"
     },
     "topbar": {
         "adminPanel": "Admin Panel",
@@ -287,6 +289,175 @@
                 "number": "One number",
                 "special": "One special character"
             }
+        }
+    },
+    "uploads": {
+        "success": "File uploaded successfully",
+        "failed": "File upload failed"
+    },
+    "ai": {
+        "generation": {
+            "started": "AI image generation started successfully",
+            "failed": "Failed to generate AI image"
+        },
+        "status": {
+            "failed": "Failed to check job status"
+        },
+        "wizard": {
+            "title": "AI Product Image Generator",
+            "description": "Create stunning product images using AI in just a few simple steps",
+            "previous": "Previous",
+            "next": "Next",
+            "generate": "Generate Image",
+            "uploadSuccess": "Image uploaded successfully",
+            "steps": {
+                "storeType": "Store Type",
+                "product": "Product",
+                "category": "Category",
+                "design": "Design",
+                "customize": "Customize",
+                "review": "Review"
+            },
+            "storeType": {
+                "title": "Select Your Store Type",
+                "description": "Choose your e-commerce platform to get started",
+                "sallaDesc": "Import products from your Salla store",
+                "zidDesc": "Import products from your Zid store",
+                "other": "Other",
+                "otherDesc": "Enter product details manually"
+            },
+            "product": {
+                "title": "Product Information",
+                "name": "Product Name",
+                "namePlaceholder": "Enter product name",
+                "description": "Description",
+                "descriptionPlaceholder": "Describe your product...",
+                "image": "Product Image",
+                "imageHint": "Upload a clear image of your product",
+                "price": "Price (Optional)",
+                "pricePlaceholder": "0.00",
+                "comingSoon": "Store Integration Coming Soon",
+                "comingSoonDesc": "Direct integration with {platform} is currently under development. Please use manual entry for now.",
+                "multiSelectPlaceholder": "When available, you'll be able to select multiple products from your store",
+                "item_number": "Product #{number}",
+                "add_another": "Add Another Product",
+                "remove": "Remove Product"
+            },
+            "category": {
+                "title": "Select Product Category",
+                "description": "Choose the category that best matches your product",
+                "perfumes": "Perfumes",
+                "clothing": "Clothing",
+                "electronics": "Electronics",
+                "food": "Food",
+                "accessories": "Accessories",
+                "furniture": "Furniture",
+                "beauty": "Beauty"
+            },
+            "design": {
+                "title": "Design Style",
+                "background": "Background Style",
+                "bgWhite": "White",
+                "bgScene": "Scene",
+                "bgTransparent": "Transparent",
+                "bgGradient": "Gradient",
+                "style": "Design Style",
+                "stylePlaceholder": "E.g., Luxury, Modern, Minimalist, Vintage...",
+                "styleHint": "Describe your preferred design aesthetic",
+                "reference": "Reference Image (Optional)",
+                "referenceHint": "Upload an image for design inspiration"
+            },
+            "customize": {
+                "title": "Customization",
+                "logo": "Store Logo",
+                "logoHint": "Upload your brand logo to include in the image",
+                "logoHintWithAvatar": "Upload your brand logo or use your profile avatar",
+                "useMyAvatar": "Use My Profile Avatar",
+                "avatarUsed": "Profile avatar set as logo",
+                "logoPosition": "Logo Position",
+                "posTopLeft": "Top Left",
+                "posTopCenter": "Top Center",
+                "posTopRight": "Top Right",
+                "posCenter": "Center",
+                "posBottomLeft": "Bottom Left",
+                "posBottomCenter": "Bottom Center",
+                "posBottomRight": "Bottom Right",
+                "overlayText": "Text Overlay",
+                "overlayTextPlaceholder": "E.g., 30% OFF, New Arrival, Limited Edition...",
+                "overlayTextHint": "Add promotional text to your image",
+                "notes": "Additional Notes",
+                "notesPlaceholder": "Any specific requirements or preferences...",
+                "notesHint": "Provide any additional instructions for the AI"
+            },
+            "review": {
+                "title": "Review & Generate",
+                "description": "Review your selections and generate your AI product images",
+                "products": "{count} Product(s)",
+                "product": "Product Information",
+                "design": "Design Preferences",
+                "customization": "Customization",
+                "logoUploaded": "Logo uploaded",
+                "promptPreview": "AI Prompt Preview"
+            },
+            "generate_batch": "Generate {count} Image(s)",
+            "batch_success": "Started generating {count} images! They will be ready in a few moments. Check the Generation History page.",
+            "result": {
+                "title": "Generation Result",
+                "success": "Image generated successfully!",
+                "successDesc": "Your AI image is being generated. You will be notified when it's ready.",
+                "error": "Failed to generate image. Please try again.",
+                "timeout": "Image generation timed out. Please try again.",
+                "jobId": "Job ID",
+                "status": "Status",
+                "createAnother": "Create Another Image"
+            }
+        }
+    },
+    "ai_generation": {
+        "title": "AI Generation History",
+        "description": "View and manage your AI image generation history",
+        "search_placeholder": "Search by job ID or status...",
+        "original_image": "Original Image",
+        "generated_image": "Generated Image",
+        "processing": "Processing...",
+        "no_image": "No image",
+        "columns": {
+            "original_image": "Original Image",
+            "generated_image": "Generated Image",
+            "status": "Status",
+            "created_at": "Created At",
+            "actions": "Actions"
+        },
+        "statuses": {
+            "pending": "Pending",
+            "processing": "Processing",
+            "completed": "Completed",
+            "failed": "Failed"
+        },
+        "filters": {
+            "status": "Status",
+            "all_statuses": "All Statuses"
+        },
+        "actions": {
+            "download": "Download Image",
+            "retry": "Retry Generation"
+        },
+        "retry_modal": {
+            "title": "Retry AI Generation",
+            "message": "Are you sure you want to retry this AI generation?",
+            "warning": "Note: If you have already downloaded the generated image, please make sure to save it. The new generation will replace the current result."
+        },
+        "messages": {
+            "download_success": "Image downloaded successfully",
+            "retry_success": "AI generation retry started successfully"
+        },
+        "errors": {
+            "unauthorized": "You are not authorized to access this resource",
+            "not_completed": "This generation is not completed yet",
+            "no_image": "No generated image available",
+            "image_not_found": "Generated image file not found",
+            "download_failed": "Failed to download image",
+            "retry_failed": "Failed to retry generation"
         }
     }
 }

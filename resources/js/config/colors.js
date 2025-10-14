@@ -15,9 +15,9 @@
 export const dashboardColors = {
     // Primary Brand Colors - Main theme colors (Orange)
     primary: {
-        DEFAULT: '#FF7B00',  // Main orange
-        light: '#FFA040',     // Lighter orange
-        dark: '#E96D00',      // Darker orange
+        DEFAULT: '#FF0000FF',  // Main orange
+        light: '#790303FF',     // Lighter orange
+        dark: '#0E0600FF',      // Darker orange
         50: '#FFF4E6',        // Very light orange tint
         100: '#FFE8CC',       // Light orange tint
         200: '#FFD199',       // Lighter orange

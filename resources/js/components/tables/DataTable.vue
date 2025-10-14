@@ -141,17 +141,18 @@
                             v-for="column in columns"
                             :key="column.key"
                             @click="column.sortable ? handleSort(column.key) : null"
-                            class="px-6 py-4 text-start text-xs font-bold uppercase tracking-wider transition-colors"
+                            class="px-6 py-4 text-xs font-bold uppercase tracking-wider transition-colors"
                             :class="[
                                 appStore.darkMode ? 'text-gray-300' : 'text-gray-900',
                                 column.sortable
                                     ? appStore.darkMode
                                         ? 'cursor-pointer hover:bg-gray-700/50'
                                         : 'cursor-pointer hover:bg-primary-100/50'
-                                    : ''
+                                    : '',
+                                column.align === 'center' ? 'text-center' : column.align === 'end' ? 'text-end' : 'text-start'
                             ]"
                         >
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2" :class="column.align === 'center' ? 'justify-center' : column.align === 'end' ? 'justify-end' : ''">
                                 {{ column.label }}
                                 <span v-if="column.sortable && sortBy === column.key" class="text-primary-600">
                                     <svg
@@ -232,15 +233,20 @@
                         <td
                             v-for="column in columns"
                             :key="column.key"
-                            class="px-6 py-4 whitespace-nowrap text-sm font-medium"
-                            :class="appStore.darkMode ? 'text-gray-200' : 'text-gray-900'"
+                            class="px-6 py-4 text-sm font-medium"
+                            :class="[
+                                appStore.darkMode ? 'text-gray-200' : 'text-gray-900',
+                                column.align === 'center' ? 'text-center' : column.align === 'end' ? 'text-end' : 'text-start'
+                            ]"
                         >
                             <slot :name="`cell-${column.key}`" :row="row" :value="row[column.key]">
                                 {{ row[column.key] }}
                             </slot>
                         </td>
                         <td v-if="$slots.actions" class="px-6 py-4 whitespace-nowrap text-end text-sm font-medium">
-                            <slot name="actions" :row="row"></slot>
+                            <div class="flex items-center justify-end gap-2">
+                                <slot name="actions" :row="row"></slot>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -278,7 +284,7 @@
                         v-for="page in visiblePages"
                         :key="page"
                         @click="goToPage(page)"
-                        class="px-4 py-2 border-2 rounded-xl text-sm font-semibold transition-all"
+                        class="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
                         :class="
                             page === meta.current_page
                                 ? 'bg-gradient-to-r from-primary to-secondary text-white border-transparent shadow-lg'

@@ -10,7 +10,11 @@
       "Bash(php artisan make:middleware:*)",
       "Bash(php artisan route:list:*)",
       "Bash(php artisan make:resource:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Read(//d/Projects/toolvers/app/Services/**)",
+      "WebFetch(domain:docs.salla.dev)",
+      "Bash(npm run build:*)",
+      "Read(//d/**)"
     ],
     "deny": [],
     "ask": []

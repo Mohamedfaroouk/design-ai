@@ -4,7 +4,12 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\StoreController;
+use App\Http\Controllers\Admin\PackageController;
+use App\Http\Controllers\Client\AiGenerationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Integration\SallaOAuthController;
+use App\Http\Controllers\Integration\SallaWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -76,12 +81,79 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
         Route::get('/', [SettingController::class, 'index'])->middleware('permission:settings.view');
         Route::put('/batch', [SettingController::class, 'updateBatch'])->middleware('permission:settings.update');
     });
+
+    // Stores Management
+    Route::prefix('stores')->group(function () {
+        Route::get('/', [StoreController::class, 'index'])->middleware('permission:stores.view');
+        Route::get('/{id}', [StoreController::class, 'show'])->middleware('permission:stores.view');
+        Route::put('/{id}', [StoreController::class, 'update'])->middleware('permission:stores.edit');
+        Route::delete('/{id}', [StoreController::class, 'destroy'])->middleware('permission:stores.delete');
+        Route::post('/{id}/refresh-token', [StoreController::class, 'refreshToken'])->middleware('permission:stores.edit');
+    });
+
+    // Packages Management
+    Route::prefix('packages')->group(function () {
+        Route::get('/', [PackageController::class, 'index'])->middleware('permission:packages.view');
+        Route::get('/list', [PackageController::class, 'list'])->middleware('permission:packages.view');
+        Route::post('/', [PackageController::class, 'store'])->middleware('permission:packages.create');
+        Route::get('/{id}', [PackageController::class, 'show'])->middleware('permission:packages.view');
+        Route::put('/{id}', [PackageController::class, 'update'])->middleware('permission:packages.edit');
+        Route::delete('/{id}', [PackageController::class, 'destroy'])->middleware('permission:packages.delete');
+    });
 });
 
 // Public settings endpoint
 Route::get('/settings/public', [SettingController::class, 'public']);
 
-// Upload endpoint (example)
+// Public packages endpoint (for pricing page)
+Route::get('/packages', [PackageController::class, 'list']);
+Route::get('/packages/platform/{platform}', [PackageController::class, 'list']);
+
+/*
+|--------------------------------------------------------------------------
+| Store Integration Routes (Public - No Auth)
+|--------------------------------------------------------------------------
+*/
+
+// Salla OAuth
+Route::prefix('integration/salla')->group(function () {
+    Route::get('/authorize', [SallaOAuthController::class, 'redirect']);
+    Route::get('/callback', [SallaOAuthController::class, 'callback']);
+});
+
+// Salla Webhooks
+Route::post('/webhooks/salla', [SallaWebhookController::class, 'handle']);
+
+// TODO: Add Zid and WordPress integration routes when implemented
+// Route::prefix('integration/zid')->group(function () { ... });
+// Route::prefix('integration/wordpress')->group(function () { ... });
+
+/*
+|--------------------------------------------------------------------------
+| Client Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:sanctum')->prefix('client')->group(function () {
+    // Upload endpoint
+    Route::post('/uploads', [App\Http\Controllers\Client\UploadController::class, 'upload']);
+
+    // AI Image Generation
+    Route::prefix('ai')->name('client.ai.')->group(function () {
+        Route::post('/generate', [App\Http\Controllers\Client\AIImageController::class, 'generate']);
+        Route::get('/status/{jobId}', [App\Http\Controllers\Client\AIImageController::class, 'status']);
+        Route::post('/callback', [App\Http\Controllers\Client\AIImageController::class, 'callback'])->name('callback')->withoutMiddleware('auth:sanctum');
+    });
+
+    // AI Generation Jobs (no permissions required - clients access their own jobs only)
+    Route::prefix('ai-generations')->group(function () {
+        Route::get('/', [AiGenerationController::class, 'index']);
+        Route::post('/{aiGenerationJob}/retry', [AiGenerationController::class, 'retry']);
+        Route::get('/{aiGenerationJob}/download', [AiGenerationController::class, 'download']);
+    });
+});
+
+// Upload endpoint (example - legacy)
 Route::post('/upload/avatar', function (Request $request) {
     if ($request->hasFile('file')) {
         $path = $request->file('file')->store('avatars', 'public');

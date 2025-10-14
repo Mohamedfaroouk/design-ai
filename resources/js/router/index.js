@@ -56,43 +56,43 @@ const routes = [
             {
                 path: 'users',
                 name: 'admin.users.index',
-                component: () => import('@/pages/Modules/Users/UsersIndex.vue'),
+                component: () => import('@/pages/Modules/admin/Users/UsersIndex.vue'),
                 meta: { title: 'Users' }
             },
             {
                 path: 'users/create',
                 name: 'admin.users.create',
-                component: () => import('@/pages/Modules/Users/UsersForm.vue'),
+                component: () => import('@/pages/Modules/admin/Users/UsersForm.vue'),
                 meta: { title: 'Create User' }
             },
             {
                 path: 'users/:id/edit',
                 name: 'admin.users.edit',
-                component: () => import('@/pages/Modules/Users/UsersForm.vue'),
+                component: () => import('@/pages/Modules/admin/Users/UsersForm.vue'),
                 meta: { title: 'Edit User' }
             },
             {
                 path: 'roles',
                 name: 'admin.roles.index',
-                component: () => import('@/pages/Modules/Roles/RolesIndex.vue'),
+                component: () => import('@/pages/Modules/admin/Roles/RolesIndex.vue'),
                 meta: { title: 'Roles & Permissions' }
             },
             {
                 path: 'roles/create',
                 name: 'admin.roles.create',
-                component: () => import('@/pages/Modules/Roles/RolesForm.vue'),
+                component: () => import('@/pages/Modules/admin/Roles/RolesForm.vue'),
                 meta: { title: 'Create Role' }
             },
             {
                 path: 'roles/:id/edit',
                 name: 'admin.roles.edit',
-                component: () => import('@/pages/Modules/Roles/RolesForm.vue'),
+                component: () => import('@/pages/Modules/admin/Roles/RolesForm.vue'),
                 meta: { title: 'Edit Role' }
             },
             {
                 path: 'settings',
                 name: 'admin.settings.index',
-                component: () => import('@/pages/Modules/Settings/SettingsIndex.vue'),
+                component: () => import('@/pages/Modules/admin/Settings/SettingsIndex.vue'),
                 meta: { title: 'Settings' }
             },
             {
@@ -100,6 +100,28 @@ const routes = [
                 name: 'admin.profile',
                 component: () => import('@/pages/Profile/ProfileIndex.vue'),
                 meta: { title: 'My Profile' }
+            },
+        ]
+    },
+
+    // Client Routes (With Layout)
+    {
+        path: '/client',
+        redirect: '/client/ai-image-generator',
+        component: () => import('@/components/layout/AppLayout.vue'),
+        meta: { requiresAuth: true },
+        children: [
+            {
+                path: 'ai-image-generator',
+                name: 'client.ai.wizard',
+                component: () => import('@/pages/Modules/client/ImageWizard.vue'),
+                meta: { title: 'AI Product Image Generator' }
+            },
+            {
+                path: 'ai-generations',
+                name: 'client.ai-generations.index',
+                component: () => import('@/pages/Modules/client/AiGenerationIndex.vue'),
+                meta: { title: 'AI Generation History' }
             },
         ]
     },
