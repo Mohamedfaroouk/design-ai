@@ -7,10 +7,10 @@
 /* - Gaps (gap-4, gap-x-6, etc.) */
 /* - Width/Height (w-64, h-32, etc.) */
 :root {
-  font-size: 85%;
+  font-size: 100%;
 }
 
 html {
-  font-size: 85%;
+  font-size: 100%;
 }
 
