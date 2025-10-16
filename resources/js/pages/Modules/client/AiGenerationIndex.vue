@@ -12,16 +12,7 @@
       >
         {{ $t('ai_generation.title') }}
       </h1>
-      <p
-        :class="
-          appStore.darkMode
-            ? 'text-gray-400'
-            : 'text-gray-600'
-        "
-        class="mt-2 transition-colors"
-      >
-        {{ $t('ai_generation.description') }}
-      </p>
+      
     </div>
 
     <!-- Data Table -->
@@ -30,7 +21,7 @@
       :data="generationStore.generations"
       :meta="generationStore.meta"
       :loading="generationStore.loading"
-      :searchable="true"
+      :searchable="false"
       :filterable="true"
       :search-placeholder="$t('ai_generation.search_placeholder')"
       @search="handleSearch"

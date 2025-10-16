@@ -1,17 +1,17 @@
 <template>
-    <div class="backdrop-blur-sm rounded-2xl shadow-lg border-2 overflow-hidden transition-colors"
+    <div class="backdrop-blur-sm rounded-xl shadow-md border overflow-hidden transition-colors"
          :class="appStore.darkMode
              ? 'bg-gray-800/90 border-gray-700'
              : 'bg-white/50 border-primary-100'">
         <!-- Search and filters -->
-        <div v-if="searchable || filterable" class="p-6 border-b-2 transition-colors"
+        <div v-if="searchable || filterable" class="p-3 border-b transition-colors"
              :class="appStore.darkMode
                  ? 'bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700'
                  : 'bg-gradient-to-r from-primary-50 to-secondary-50 border-primary-100'">
-            <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex flex-col sm:flex-row gap-2">
                 <div v-if="searchable" class="flex-1 relative group">
-                    <div class="absolute inset-y-0 start-0 flex items-center ps-4 pointer-events-none">
-                        <svg class="w-5 h-5 text-gray-400 group-focus-within:text-primary-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-400 group-focus-within:text-primary-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
@@ -19,7 +19,7 @@
                         v-model="localSearch"
                         type="text"
                         :placeholder="t('common.search')"
-                        class="w-full ps-11 pe-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all backdrop-blur-sm"
+                        class="w-full ps-9 pe-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-all backdrop-blur-sm"
                         :class="appStore.darkMode
                             ? 'bg-gray-900/50 border-gray-600 text-gray-200 placeholder-gray-500 focus:border-primary-400 focus:ring-primary-900/50'
                             : 'bg-white/50 border-primary-200 focus:border-primary-500 focus:ring-primary-100'"
@@ -28,7 +28,7 @@
                 <div v-if="filterable" class="flex gap-2">
                     <button
                         @click="showFilters = !showFilters"
-                        class="px-4 py-3 border-2 rounded-xl font-medium transition-all flex items-center gap-2 relative"
+                        class="px-3 py-2 text-sm border rounded-lg font-medium transition-all flex items-center gap-2 relative"
                         :class="[
                             appStore.darkMode
                                 ? 'bg-gray-900/50 border-gray-600 text-gray-200 hover:bg-gray-700 hover:border-gray-500'
@@ -36,11 +36,11 @@
                             hasActiveFilters ? 'ring-2 ring-primary-500' : ''
                         ]"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                         </svg>
                         <span class="hidden sm:inline">{{ t('common.filters') }}</span>
-                        <span v-if="activeFiltersCount > 0" class="absolute -top-2 -end-2 w-6 h-6 bg-primary-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                        <span v-if="activeFiltersCount > 0" class="absolute -top-1 -end-1 w-5 h-5 bg-primary-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
                             {{ activeFiltersCount }}
                         </span>
                     </button>
@@ -130,7 +130,7 @@
 
         <!-- Table -->
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y-2 transition-colors"
+            <table class="min-w-full divide-y transition-colors"
                    :class="appStore.darkMode ? 'divide-gray-700' : 'divide-primary-100'">
                 <thead class="transition-colors"
                        :class="appStore.darkMode
@@ -141,7 +141,7 @@
                             v-for="column in columns"
                             :key="column.key"
                             @click="column.sortable ? handleSort(column.key) : null"
-                            class="px-6 py-4 text-xs font-bold uppercase tracking-wider transition-colors"
+                            class="px-4 py-3 text-xs font-semibold uppercase tracking-wide transition-colors"
                             :class="[
                                 appStore.darkMode ? 'text-gray-300' : 'text-gray-900',
                                 column.sortable
@@ -180,19 +180,19 @@
                         </th>
                         <th
                             v-if="$slots.actions"
-                            class="px-6 py-4 text-end text-xs font-bold uppercase tracking-wider"
+                            class="px-4 py-2 text-end text-xs font-semibold uppercase tracking-wide"
                             :class="appStore.darkMode ? 'text-gray-300' : 'text-gray-900'"
                         >
                             {{ t('common.actions') }}
                         </th>
                     </tr>
                 </thead>
-                <tbody class="backdrop-blur-sm divide-y-2 transition-colors"
+                <tbody class="backdrop-blur-sm divide-y transition-colors"
                        :class="appStore.darkMode
                            ? 'bg-gray-900/50 divide-gray-700'
                            : 'bg-white/50 divide-primary-50'">
                     <tr v-if="loading">
-                        <td :colspan="columns.length + ($slots.actions ? 1 : 0)" class="px-6 py-4 text-center">
+                        <td :colspan="columns.length + ($slots.actions ? 1 : 0)" class="px-4 py-3 text-center">
                             <div class="flex justify-center">
                                 <svg
                                     class="animate-spin h-8 w-8 text-primary-600"
@@ -218,9 +218,9 @@
                         </td>
                     </tr>
                     <tr v-else-if="localData.length === 0">
-                        <td :colspan="columns.length + ($slots.actions ? 1 : 0)" class="px-6 py-8 text-center"
+                        <td :colspan="columns.length + ($slots.actions ? 1 : 0)" class="px-4 py-6 text-center"
                             :class="appStore.darkMode ? 'text-gray-400' : 'text-gray-500'">
-                            <svg class="w-16 h-16 mx-auto mb-4"
+                            <svg class="w-12 h-12 mx-auto mb-3"
                                  :class="appStore.darkMode ? 'text-gray-600' : 'text-gray-300'"
                                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -233,7 +233,7 @@
                         <td
                             v-for="column in columns"
                             :key="column.key"
-                            class="px-6 py-4 text-sm font-medium"
+                            class="px-4 py-4 text-sm"
                             :class="[
                                 appStore.darkMode ? 'text-gray-200' : 'text-gray-900',
                                 column.align === 'center' ? 'text-center' : column.align === 'end' ? 'text-end' : 'text-start'
@@ -243,7 +243,7 @@
                                 {{ row[column.key] }}
                             </slot>
                         </td>
-                        <td v-if="$slots.actions" class="px-6 py-4 whitespace-nowrap text-end text-sm font-medium">
+                        <td v-if="$slots.actions" class="px-4 py-2.5 whitespace-nowrap text-end text-sm">
                             <div class="flex items-center justify-end gap-2">
                                 <slot name="actions" :row="row"></slot>
                             </div>
@@ -254,12 +254,12 @@
         </div>
 
         <!-- Pagination -->
-        <div v-if="paginated && meta" class="px-6 py-4 border-t-2 transition-colors"
+        <div v-if="paginated && meta" class="px-4 py-3 border-t transition-colors"
              :class="appStore.darkMode
                  ? 'bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700'
                  : 'bg-gradient-to-r from-primary-50 to-secondary-50 border-primary-100'">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="text-sm font-medium"
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="text-xs font-medium"
                      :class="appStore.darkMode ? 'text-gray-300' : 'text-gray-700'">
                     {{ t('common.showing') }}
                     <span class="font-medium">{{ meta.from || 0 }}</span>
@@ -269,11 +269,11 @@
                     <span class="font-medium">{{ meta.total || 0 }}</span>
                     {{ t('common.results') }}
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-1">
                     <button
                         @click="goToPage(meta.current_page - 1)"
                         :disabled="meta.current_page <= 1"
-                        class="px-4 py-2 border-2 rounded-xl text-sm font-semibold hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        class="px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         :class="appStore.darkMode
                             ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
                             : 'border-primary-200 text-gray-700 hover:border-primary-300'"
@@ -284,13 +284,13 @@
                         v-for="page in visiblePages"
                         :key="page"
                         @click="goToPage(page)"
-                        class="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-w-[32px]"
                         :class="
                             page === meta.current_page
-                                ? 'bg-gradient-to-r from-primary to-secondary text-white border-transparent shadow-lg'
+                                ? 'bg-gradient-to-r from-primary to-secondary text-white border-transparent shadow-md'
                                 : appStore.darkMode
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
-                                    : 'border-primary-200 text-gray-700 hover:bg-white hover:border-primary-300'
+                                    ? 'border border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
+                                    : 'border border-primary-200 text-gray-700 hover:bg-white hover:border-primary-300'
                         "
                     >
                         {{ page }}
@@ -298,7 +298,7 @@
                     <button
                         @click="goToPage(meta.current_page + 1)"
                         :disabled="meta.current_page >= meta.last_page"
-                        class="px-4 py-2 border-2 rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        class="px-3 py-1.5 border rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         :class="appStore.darkMode
                             ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
                             : 'border-primary-200 text-gray-700 hover:bg-white hover:border-primary-300'"
@@ -355,6 +355,10 @@ const props = defineProps({
     searchDebounce: {
         type: Number,
         default: 300
+    },
+    tableHeight: {
+        type: String,
+        default: '500px'
     }
 })
 

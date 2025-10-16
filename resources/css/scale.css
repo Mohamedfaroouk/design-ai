@@ -1,0 +1,16 @@
+/* Global 90% scale for all elements */
+/* Setting font-size to 90% scales ALL rem-based values including: */
+/* - Fonts (text-sm, text-base, text-lg, etc.) */
+/* - Spacing (space-x-4, space-y-2, etc.) */
+/* - Padding (p-1, p-4, px-8, py-2, etc.) */
+/* - Margin (m-2, mx-4, my-6, etc.) */
+/* - Gaps (gap-4, gap-x-6, etc.) */
+/* - Width/Height (w-64, h-32, etc.) */
+:root {
+  font-size: 85%;
+}
+
+html {
+  font-size: 85%;
+}
+
