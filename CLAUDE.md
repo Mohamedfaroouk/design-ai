@@ -3,9 +3,9 @@
 ## Project Overview
 
 Laravel 12 + Vue 3 SaaS Dashboard with:
-- **Backend**: Laravel 12 (PHP 8.2+), Sanctum auth, Spatie permissions
-- **Frontend**: Vue 3 + Vite + Tailwind CSS 4.0 + Pinia + Vue Router
-- **Features**: Dark mode, i18n (EN/AR), RTL/LTR, DataTable composable
+- **Backend**: Laravel 12 (PHP 8.2+), Session-based auth, Spatie permissions
+- **Frontend**: Vue 3 + Vite + Tailwind CSS 4.0 + Inertia.js + Pinia (for UI state only)
+- **Features**: Dark mode, i18n (EN/AR), RTL/LTR, DataTable trait
 - **Database**: SQLite, queue system
 
 ## Development Commands
@@ -23,8 +23,8 @@ vendor/bin/pint       # Format code
 ```
 app/
 ├── Http/Controllers/
-│   ├── Admin/                      # Admin controllers (use HasDataTable trait)
-│   └── Client/                     # Client controllers (use HasDataTable trait)
+│   ├── Admin/                      # Admin controllers (use HasDataTableInertia trait)
+│   └── Client/                     # Client controllers (use HasDataTableInertia trait)
 ├── Services/
 │   ├── Admin/                      # Admin business logic
 │   └── Client/                     # Client business logic
@@ -32,8 +32,8 @@ app/
 │   ├── Admin/                      # Admin validation rules
 │   └── Client/                     # Client validation rules
 ├── Http/Resources/
-│   ├── Admin/                      # Admin API responses
-│   └── Client/                     # Client API responses
+│   ├── Admin/                      # Admin API responses (for Inertia props)
+│   └── Client/                     # Client API responses (for Inertia props)
 └── Models/                         # Eloquent models
 
 resources/js/
@@ -44,19 +44,16 @@ resources/js/
 │   ├── auth/                       # Auth pages (Login, ForgotPassword, etc.)
 │   ├── Profile/                    # Profile pages
 │   └── Dashboard.vue               # Main dashboard
-├── services/
-│   ├── admin/                      # Admin API services
-│   └── client/                     # Client API services
 ├── store/
-│   ├── admin/                      # Admin Pinia stores
-│   └── client/                     # Client Pinia stores
+│   ├── index.js                    # App store (dark mode, direction) + Toast store
+│   ├── admin/                      # Admin Pinia stores (optional, for complex state)
+│   └── client/                     # Client Pinia stores (optional, for complex state)
 ├── components/
 │   ├── inputs/                     # Input components
 │   ├── tables/                     # Table components
 │   └── ui/                         # UI components
-├── composables/                    # Reusable composables
-├── i18n/locales/                   # Translations (en.json, ar.json)
-└── router/                         # Vue Router configuration
+├── composables/                    # Reusable composables (useImageUpload, etc.)
+└── i18n/locales/                   # Translations (en.json, ar.json)
 ```
 
 ## Backend Architecture
@@ -64,10 +61,10 @@ resources/js/
 ### Required Components (Admin/Client separation)
 
 **Every module needs 4 files:**
-1. **Controller** - HTTP handling (use `HasDataTable` trait for index)
+1. **Controller** - HTTP handling (use `HasDataTableInertia` trait for index)
 2. **Service** - Business logic (DB transactions, file uploads)
 3. **Request** - Validation (Store/Update)
-4. **Resource** - API responses
+4. **Resource** - Inertia props formatting
 
 **❌ NO business logic in Controllers**
 **✅ ALL business logic in Services**
@@ -83,20 +80,23 @@ $middleware->alias([
 
 **Use in routes (Laravel 11+):**
 ```php
-Route::middleware(['auth:sanctum', 'permission:products.view'])
-    ->get('/admin/products', [ProductController::class, 'index']);
+Route::middleware(['auth', 'permission:products.view'])
+    ->get('/admin/products', [WebProductController::class, 'index']);
 ```
 
 **Default roles:** `admin` (all permissions), `client` (basic access)
 
 ### Code Pattern Example
 
-**Controller (use HasDataTable):**
+**Controller (use HasDataTableInertia):**
 ```php
-use App\Traits\HasDataTable;
+use App\Traits\HasDataTableInertia;
+use Inertia\Inertia;
+use Inertia\Response;
 
-public function index(Request $request): JsonResponse {
-    return $this->dataTableResponse(
+public function index(Request $request): Response {
+    return $this->inertiaDataTable(
+        page: 'Modules/admin/Products/ProductsIndex',
         query: Product::with(['category']),
         request: $request,
         resource: ProductResource::class,
@@ -105,10 +105,20 @@ public function index(Request $request): JsonResponse {
     );
 }
 
-public function store(StoreRequest $request): JsonResponse {
-    return response()->json([
-        'data' => new ProductResource($this->service->create($request->validated()))
-    ], 201);
+public function create(): Response {
+    return Inertia::render('Modules/admin/Products/ProductsForm');
+}
+
+public function store(StoreProductRequest $request): RedirectResponse {
+    try {
+        $this->service->create($request->validated());
+        return redirect()->route('admin.products.index')
+            ->with('success', __('messages.product.created'));
+    } catch (\Exception $e) {
+        return redirect()->back()
+            ->withInput()
+            ->withErrors(['error' => $e->getMessage()]);
+    }
 }
 ```
 
@@ -128,11 +138,18 @@ public function authorize(): bool {
 public function rules(): array {
     return ['name' => ['required', 'string', 'max:255']];
 }
+
+// For Inertia, ensure failedValidation redirects back with errors
+protected function failedValidation(Validator $validator) {
+    throw new HttpResponseException(
+        back()->withErrors($validator->errors())->withInput()
+    );
+}
 ```
 
 **Artisan commands:**
 ```bash
-php artisan make:controller Admin/ProductController --api
+php artisan make:controller Admin/WebProductController
 php artisan make:request Admin/StoreProductRequest
 php artisan make:resource Admin/ProductResource
 # Service: create manually in app/Services/Admin/
@@ -140,61 +157,38 @@ php artisan make:resource Admin/ProductResource
 
 ### DataTable System
 
-**Laravel trait:** `app/Traits/HasDataTable.php`
+**Laravel trait:** `app/Traits/HasDataTableInertia.php`
 - Pagination, search, sort, filter (supports nested relations like `category.name`)
 - Query params: `?page=1&search=query&sort_by=name&category_id=5`
+- Returns Inertia response with data and meta as props
 
-**Vue composable:** `resources/js/composables/useDataTable.js`
-```js
-// ✅ CORRECT - Named import
-import { useDataTable } from '@/composables/useDataTable'
-
-const { items, meta, loading, handleSearch, handleSort, handlePageChange, refresh } =
-  useDataTable(productsService.fetchList, { perPage: 15, sortBy: 'created_at' })
-```
-- Auto state management, URL sync, debounced search (300ms default)
-- Use with `<DataTable>` component for full functionality
-
-**DataTable with filters:**
+**Frontend:** Data comes from Inertia props
 ```vue
-<DataTable
-  :filterable="true"
-  @filter="handleFilter"
->
-  <template #filters="{ filters, updateFilter }">
-    <Select
-      :modelValue="filters.role"
-      @update:modelValue="updateFilter('role', $event)"
-      :label="$t('users.fields.role')"
-      :options="roleOptions"
-    />
-  </template>
-</DataTable>
+<script setup>
+import { usePage } from '@inertiajs/vue3'
+
+const page = usePage()
+const products = computed(() => page.props.products || [])
+const meta = computed(() => page.props.meta || {})
+</script>
 ```
 
-**Filter handler:**
-```js
-const handleFilter = (filterData) => {
-  filters.value = { ...filters.value, ...filterData, page: 1 }
-  loadUsers()
-}
-```
-
-### Authentication (Sanctum + OTP)
+### Authentication (Session-based)
 
 **Default users:**
 - **Admin:** `admin@example.com` / `password` (⚠️ change in production)
 - **Client:** `client@example.com` / `password` (⚠️ change in production)
 
-**Endpoints:**
-- `POST /api/auth/login` → returns `{ user, token }`
-- `POST /api/auth/forgot-password` → sends OTP (6 digits, 10min expiry)
-- `POST /api/auth/verify-otp` → validates OTP
-- `POST /api/auth/reset-password` → resets password
-- `GET /api/auth/me` → current user + permissions
-- `POST /api/auth/logout`
+**Routes:**
+- `GET /login` → Show login form
+- `POST /login` → Authenticate user
+- `POST /logout` → Logout user
+- `GET /forgot-password` → Show forgot password form
+- `POST /forgot-password` → Send OTP
+- `POST /verify-otp` → Verify OTP
+- `POST /reset-password` → Reset password
 
-**Use token:** `Authorization: Bearer {token}`
+**User data:** Available via `page.props.auth.user` in all Inertia pages
 
 ### Translations (EN/AR)
 
@@ -203,47 +197,33 @@ const handleFilter = (filterData) => {
 
 **Locale Middleware:** `app/Http/Middleware/SetLocale.php`
 - Priority: `?lang=ar` → Accept-Language header → User preference → Default (en)
-- Auto-registered in `bootstrap/app.php` for API routes
+- Auto-registered in `bootstrap/app.php` for web routes
 
-**Frontend:** Sends Accept-Language header with every request
-- Reads from `localStorage.getItem('locale')`
-- Updated via `<LanguageSwitcher>` component
+**Frontend:** Locale shared via Inertia props
+- Available as `page.props.locale`
+- Translations loaded via `page.props.translations`
 
-## Vue 3 Frontend
+## Vue 3 Frontend (Inertia.js)
 
 **Admin/Client separation:** Match backend structure
 - **Admin Pages:** `pages/Modules/admin/Users/UsersIndex.vue`, `UsersForm.vue`
 - **Client Pages:** `pages/Modules/client/ImageWizard.vue`
-- **Services:** `services/admin/users.js`, `services/client/aiImage.js`
-- **Stores:** `store/admin/users.js`, `store/client/ai.js`
+- **Stores:** Only for UI state (dark mode, toast) - NOT for data fetching
 
 ### Components & Composables
 
 **Inputs (all with dark mode):** `TextInput`, `Select`, `DatePicker`, `ImagePicker`, etc.
 **UI:** `Button` (variants: primary/secondary/danger), `Modal`, `Toast`, `Spinner`
-**Table:** `DataTable` (search, sort, paginate)
+**Table:** `DataTable` (uses props from Inertia)
 
 **Composables:**
 ```js
-// Form handling
-const { form, errors, getError, post, put } = useForm({ name: '', email: '' })
-await post('/api/users', {
-  successMessage: 'User created',
-  onSuccess: () => router.push('/users')
-})
-
-// Display errors in template
-<TextInput :error="getError('email')" />
-
-// Data fetching
-const { data, loading, refresh } = useFetch('/api/users')
-
-// Toasts
-const toast = useToastStore()
-toast.success('Saved!')
+// Image upload (uses axios directly for file uploads)
+const { preview, uploading, progress, upload } = useImageUpload()
+await upload(file, '/client/uploads')
 ```
 
-**Pinia stores:**
+**Pinia stores (UI state only):**
 ```js
 // ✅ CORRECT - Import from store/index
 import { useAppStore } from '@/store/index'
@@ -270,11 +250,12 @@ toast.success('Saved!')
 
 #### Backend (4 files required):
 
-1. **Controller** - `app/Http/Controllers/Admin|Client/ProductController.php`
+1. **Controller** - `app/Http/Controllers/Admin|Client/WebProductController.php`
    ```bash
-   php artisan make:controller Admin/ProductController --api
+   php artisan make:controller Admin/WebProductController
    ```
-   - Use `HasDataTable` trait for index method
+   - Use `HasDataTableInertia` trait for index method
+   - Return `Inertia::render()` or `redirect()` responses
    - Keep it thin - only HTTP handling
 
 2. **Service** - `app/Services/Admin|Client/ProductService.php`
@@ -291,224 +272,159 @@ toast.success('Saved!')
    ```
    - Validation rules
    - Authorization logic
+   - Override `failedValidation()` for Inertia
 
 4. **Resource** - `app/Http/Resources/Admin|Client/ProductResource.php`
    ```bash
    php artisan make:resource Admin/ProductResource
    ```
-   - API response formatting
+   - Inertia props formatting
 
-5. **Routes** - Add to `routes/api.php` with permissions
-
-#### Frontend (3 files required):
-
-1. **Service** - `resources/js/services/admin|client/products.js`
-   ```js
-   import api from '../api'
-
-   export default {
-     fetchList(params = {}) {
-       return api.get('/admin/products', params)  // ✅ Pass params directly
-     },
-     fetchOne(id) {
-       return api.get(`/admin/products/${id}`)
-     },
-     create(data) {
-       return api.post('/admin/products', data)
-     },
-     update(id, data) {
-       return api.put(`/admin/products/${id}`, data)
-     },
-     delete(id) {
-       return api.delete(`/admin/products/${id}`)
-     }
-   }
-   ```
-   **⚠️ IMPORTANT:** Always pass `params` directly to `api.get()`, NOT `{ params }`
-
-2. **Pinia Store** - `resources/js/store/admin|client/products.js` **(REQUIRED)**
-   ```js
-   import { defineStore } from 'pinia'
-   import productsService from '@/services/admin/products'
-
-   export const useAdminProductsStore = defineStore('adminProducts', {
-     state: () => ({
-       products: [],
-       meta: null,
-       loading: false,
-       error: null
-     }),
-
-     actions: {
-       async fetchList(params = {}) {
-         this.loading = true
-         this.error = null
-         try {
-           const response = await productsService.fetchList(params)
-           this.products = response.data
-           this.meta = response.meta
-           return response
-         } catch (error) {
-           this.error = error.message
-           throw error
-         } finally {
-           this.loading = false
-         }
-       },
-
-       async create(data) {
-         this.loading = true
-         try {
-           const response = await productsService.create(data)
-           return response
-         } catch (error) {
-           this.error = error.message
-           throw error
-         } finally {
-           this.loading = false
-         }
-       },
-
-       async update(id, data) {
-         this.loading = true
-         try {
-           const response = await productsService.update(id, data)
-           return response
-         } catch (error) {
-           this.error = error.message
-           throw error
-         } finally {
-           this.loading = false
-         }
-       },
-
-       async delete(id) {
-         this.loading = true
-         try {
-           const response = await productsService.delete(id)
-           this.products = this.products.filter(p => p.id !== id)
-           return response
-         } catch (error) {
-           this.error = error.message
-           throw error
-         } finally {
-           this.loading = false
-         }
-       }
-     }
-   })
+5. **Routes** - Add to `routes/web.php` with permissions
+   ```php
+   Route::middleware(['auth', 'permission:products.view'])->group(function () {
+       Route::resource('products', WebProductController::class);
+   });
    ```
 
-3. **Index Page** - `resources/js/pages/Modules/admin|client/Products/ProductsIndex.vue`
+#### Frontend (2 files required):
+
+1. **Index Page** - `resources/js/pages/Modules/admin|client/Products/ProductsIndex.vue`
    ```vue
    <script setup>
-   import { ref, computed, onMounted } from 'vue'
+   import { computed } from 'vue'
+   import { Head, Link, usePage } from '@inertiajs/vue3'
    import { useI18n } from 'vue-i18n'
    import { useAppStore } from '@/store/index'
-   import { useToastStore } from '@/store/index'
-   import { useAdminProductsStore } from '@/store/admin/products'
    import DataTable from '@/components/tables/DataTable.vue'
 
    const { t } = useI18n()
+   const page = usePage()
    const appStore = useAppStore()
-   const toast = useToastStore()
-   const productsStore = useAdminProductsStore()
 
-   // Filters state
-   const filters = ref({
-     search: '',
-     sortBy: 'created_at',
-     sortOrder: 'desc',
-     page: 1,
-     perPage: 15
-   })
+   // Data comes from Inertia props
+   const products = computed(() => page.props.products || [])
+   const meta = computed(() => page.props.meta || {})
 
    // Table columns
    const columns = computed(() => [
      { key: 'name', label: t('products.fields.name'), sortable: true },
      { key: 'created_at', label: t('products.fields.createdAt'), sortable: true }
    ])
-
-   // Load data
-   const loadProducts = async () => {
-     try {
-       await productsStore.fetchList(filters.value)
-     } catch (error) {
-       toast.error(error.message || t('common.error'))
-     }
-   }
-
-   // Event handlers
-   const handleSearch = (query) => {
-     filters.value.search = query
-     filters.value.page = 1
-     loadProducts()
-   }
-
-   const handleSort = ({ column, order }) => {
-     filters.value.sortBy = column
-     filters.value.sortOrder = order
-     loadProducts()
-   }
-
-   const handlePageChange = (page) => {
-     filters.value.page = page
-     loadProducts()
-   }
-
-   onMounted(() => {
-     loadProducts()
-   })
    </script>
 
    <template>
+     <Head :title="$t('products.title')" />
      <DataTable
        :columns="columns"
-       :data="productsStore.products"
-       :meta="productsStore.meta"
-       :loading="productsStore.loading"
-       @search="handleSearch"
-       @sort="handleSort"
-       @page-change="handlePageChange"
+       :data="products"
+       :meta="meta"
      />
    </template>
    ```
 
-4. **Form Page** - `resources/js/pages/Modules/admin|client/Products/ProductsForm.vue`
-   - Use `useForm` composable for form handling
-   - See "Error Handling Best Practices" section
+2. **Form Page** - `resources/js/pages/Modules/admin|client/Products/ProductsForm.vue`
+   ```vue
+   <script setup>
+   import { Head, useForm } from '@inertiajs/vue3'
+   import { useI18n } from 'vue-i18n'
+   import { useToastStore } from '@/store/index'
+   import TextInput from '@/components/inputs/TextInput.vue'
+   import Button from '@/components/ui/Button.vue'
 
-5. **Router** - Add routes to `resources/js/router/index.js`
+   const { t } = useI18n()
+   const toast = useToastStore()
+   const page = usePage()
 
-6. **Translations** - Add to `resources/js/i18n/locales/en.json` and `ar.json`
+   // Use Inertia's useForm
+   const form = useForm({
+     name: page.props.product?.name || '',
+     email: page.props.product?.email || '',
+   })
+
+   const handleSubmit = () => {
+     const url = page.props.product 
+       ? `/admin/products/${page.props.product.id}`
+       : '/admin/products'
+     
+     const method = page.props.product ? 'put' : 'post'
+     
+     form[method](url, {
+       preserveScroll: true,
+       onSuccess: () => {
+         toast.success(t('products.saved'))
+       },
+       onError: (errors) => {
+         // Errors automatically available in form.errors
+       }
+     })
+   }
+   </script>
+
+   <template>
+     <Head :title="$t('products.form.title')" />
+     <form @submit.prevent="handleSubmit">
+       <TextInput
+         v-model="form.name"
+         :label="$t('products.fields.name')"
+         :error="form.errors.name"
+       />
+       <Button type="submit" :loading="form.processing">
+         {{ $t('common.save') }}
+       </Button>
+     </form>
+   </template>
+   ```
+
+3. **Translations** - Add to `resources/js/i18n/locales/en.json` and `ar.json`
 
 #### Key Patterns (MUST FOLLOW):
 
-**❌ DON'T use `useDataTable` composable:**
+**❌ DON'T use API services or Pinia stores for data:**
 ```js
-// ❌ WRONG
-const { items, meta } = useDataTable(service.fetchList)
+// ❌ WRONG - No API services
+import productsService from '@/services/admin/products'
+await productsService.fetchList()
+
+// ❌ WRONG - No Pinia stores for data
+const productsStore = useAdminProductsStore()
+await productsStore.fetchList()
 ```
 
-**✅ DO use Pinia store pattern:**
+**✅ DO use Inertia props:**
 ```js
-// ✅ CORRECT
-const productsStore = useAdminProductsStore()
-const filters = ref({ page: 1, search: '' })
-await productsStore.fetchList(filters.value)
+// ✅ CORRECT - Data from Inertia props
+const page = usePage()
+const products = computed(() => page.props.products || [])
+```
+
+**✅ DO use Inertia's useForm:**
+```js
+// ✅ CORRECT - Inertia form handling
+import { useForm } from '@inertiajs/vue3'
+const form = useForm({ name: '', email: '' })
+form.post('/admin/products', {
+  onSuccess: () => router.visit('/admin/products')
+})
+```
+
+**✅ DO use Inertia router for navigation:**
+```js
+// ✅ CORRECT - Inertia navigation
+import { router, Link } from '@inertiajs/vue3'
+router.visit('/admin/products')
+// or
+<Link href="/admin/products">Products</Link>
 ```
 
 **Structure Reference:**
-- **Admin Example:** `pages/Modules/admin/Roles/RolesIndex.vue` + `store/admin/roles.js`
-- **Client Example:** `pages/Modules/client/AiGenerationIndex.vue` + `store/client/aiGeneration.js`
+- **Admin Example:** `pages/Modules/admin/Users/UsersIndex.vue`
+- **Client Example:** `pages/Modules/client/Products/ProductsIndex.vue`
 
 **Checklist:**
 - ✅ Backend: Controller, Service, Request, Resource, Routes
-- ✅ Frontend: Service file (correct params handling)
-- ✅ Frontend: Pinia store (state + actions)
-- ✅ Frontend: Index page (store pattern, not useDataTable)
-- ✅ Frontend: Form page (useForm composable)
-- ✅ Router configuration
+- ✅ Frontend: Index page (uses Inertia props)
+- ✅ Frontend: Form page (uses Inertia's useForm)
 - ✅ Translations (EN/AR)
 - ✅ Dark mode support
 - ✅ Import stores from `@/store/index` for useAppStore/useToastStore
@@ -523,7 +439,6 @@ await productsStore.fetchList(filters.value)
 ```
 - Use `gray-800/900` (dark) vs `white/gray-50` (light)
 - Add `transition-colors` for smooth switching
-- See `COLOR_SYSTEM.md` for color system
 
 **2. 🌐 Translations:**
 ```vue
@@ -542,51 +457,138 @@ await productsStore.fetchList(filters.value)
 
 ## Error Handling Best Practices
 
-### ✅ DO: Use `useForm` composable for forms
+### ✅ DO: Use Inertia's `useForm` for forms
 ```vue
 <script setup>
-const { form, errors, getError, post, put } = useForm({ email: '', password: '' })
+import { useForm } from '@inertiajs/vue3'
 
-const handleSubmit = async () => {
-  try {
-    await post('/api/users', {
-      successMessage: 'User created',
-      onSuccess: () => router.push('/users')
-    })
-  } catch (error) {
-    // Errors are auto-handled:
-    // - Field errors shown inline via getError()
-    // - Non-422 errors show toast
-  }
+const form = useForm({ email: '', password: '' })
+
+const handleSubmit = () => {
+  form.post('/admin/users', {
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success('User created')
+    },
+    onError: (errors) => {
+      // Errors automatically available in form.errors
+    }
+  })
 }
 </script>
 
 <template>
-  <TextInput v-model="form.email" :error="getError('email')" />
-  <Button @click="handleSubmit" :loading="loading">Submit</Button>
+  <TextInput v-model="form.email" :error="form.errors.email" />
+  <Button @click="handleSubmit" :loading="form.processing">Submit</Button>
 </template>
 ```
 
-### ❌ DON'T: Manually handle errors
+### ❌ DON'T: Use API calls or manual error handling
 ```js
-// ❌ WRONG - Don't manually set errors
+// ❌ WRONG - Don't use API services
+import api from '@/services/api'
+await api.post('/admin/users', data)
+
+// ❌ WRONG - Don't manually handle errors
 catch (error) {
   if (error.errors) {
     Object.keys(error.errors).forEach(key => {
       errors.value[key] = error.errors[key]
     })
   }
-  toast.error(error.message)
-}
-
-// ✅ CORRECT - useForm handles it automatically
-catch (error) {
-  // Leave empty or add custom logic only if needed
 }
 ```
 
 ### How Error Handling Works
-1. **422 Validation errors** → Shown inline under fields (no toast)
-2. **Other errors (401, 403, 500, etc.)** → Toast notification
+1. **Validation errors** → Automatically available in `form.errors` (no toast)
+2. **Other errors (401, 403, 500, etc.)** → Can be handled in `onError` callback
 3. **Backend message preserved** → Custom validation messages display correctly
 4. **Automatic error clearing** → Errors reset on next submit
+
+## Inertia.js Patterns
+
+### Navigation
+```js
+import { router, Link } from '@inertiajs/vue3'
+
+// Programmatic navigation
+router.visit('/admin/products')
+router.get('/admin/products', { search: 'query' })
+router.post('/admin/products', formData)
+router.put(`/admin/products/${id}`, formData)
+router.delete(`/admin/products/${id}`)
+
+// Link component
+<Link href="/admin/products">Products</Link>
+<Link href="/admin/products" :data="{ search: 'query' }">Search</Link>
+```
+
+### Form Handling
+```js
+import { useForm } from '@inertiajs/vue3'
+
+const form = useForm({
+  name: '',
+  email: ''
+})
+
+// Submit form
+form.post('/admin/users', {
+  preserveScroll: true,
+  preserveState: false,
+  onSuccess: (page) => {
+    // Handle success
+  },
+  onError: (errors) => {
+    // Handle errors (optional, form.errors already populated)
+  },
+  onFinish: () => {
+    // Always called
+  }
+})
+
+// Access form state
+form.processing  // Boolean - is submitting
+form.errors      // Object - validation errors
+form.hasErrors   // Boolean - has any errors
+```
+
+### Accessing Props
+```js
+import { usePage } from '@inertiajs/vue3'
+
+const page = usePage()
+
+// Access props
+const user = computed(() => page.props.auth?.user)
+const products = computed(() => page.props.products || [])
+const flash = computed(() => page.props.flash)
+
+// Access URL
+const currentUrl = computed(() => page.url)
+```
+
+### Flash Messages
+```php
+// Backend
+return redirect()->route('admin.products.index')
+    ->with('success', __('messages.product.created'));
+```
+
+```vue
+<!-- Frontend -->
+<script setup>
+import { usePage } from '@inertiajs/vue3'
+import { watch } from 'vue'
+import { useToastStore } from '@/store/index'
+
+const page = usePage()
+const toast = useToastStore()
+
+watch(() => page.props.flash?.success, (message) => {
+  if (message) {
+    toast.success(message)
+  }
+})
+</script>
+```

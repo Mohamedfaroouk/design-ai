@@ -1,21 +1,21 @@
-# Vue 3 Dashboard - Quick Start Guide
+# Vue 3 Dashboard with Inertia.js - Quick Start Guide
 
 ## Overview
 
-This Laravel + Vue 3 SaaS Dashboard includes:
+This Laravel + Vue 3 SaaS Dashboard uses **Inertia.js** to bridge Laravel and Vue seamlessly:
 
 ✅ Complete Vue 3 setup with Composition API
-✅ Pinia state management
-✅ Vue Router with transitions
+✅ Inertia.js for server-driven UI (no API layer needed)
+✅ Session-based authentication
+✅ Pinia for UI state only (dark mode, toast)
 ✅ 8 reusable input components
 ✅ DataTable with server-side pagination
 ✅ Complete Users CRUD module
 ✅ RTL/LTR support
 ✅ Toast notifications
 ✅ Modal dialogs
-✅ Form validation
+✅ Form validation (automatic via Inertia)
 ✅ Image upload with preview
-✅ API service with interceptors
 
 ## Getting Started
 
@@ -85,13 +85,13 @@ You should see the Vue dashboard with:
 - `Spinner.vue` - Loading spinner
 
 **Layout Components** (`resources/js/components/layout/`)
-- `AppLayout.vue` - Main layout wrapper
-- `Sidebar.vue` - Collapsible sidebar navigation
-- `Topbar.vue` - Top navigation bar with user menu
+- `AppLayout.vue` - Main layout wrapper (uses Inertia slots)
+- `Sidebar.vue` - Collapsible sidebar navigation (uses Inertia Link)
+- `Topbar.vue` - Top navigation bar with user menu (uses Inertia router)
 
 **Table Components** (`resources/js/components/tables/`)
 - `DataTable.vue` - Full-featured data table with:
-  - Server-side pagination
+  - Server-side pagination (data from Inertia props)
   - Sorting
   - Search
   - Custom cell rendering
@@ -99,27 +99,34 @@ You should see the Vue dashboard with:
 
 ### Composables
 
-**useFetch** - Fetch data with loading state
-```js
-const { data, loading, error, refresh } = useFetch('/api/users')
-```
-
-**useForm** - Form handling with validation
-```js
-const { form, errors, loading, post, put } = useForm({ name: '', email: '' })
-await post('/api/users', { successMessage: 'Created!' })
-```
-
 **useImageUpload** - Image upload with preview
 ```js
+import { useImageUpload } from '@/composables/useImageUpload'
+
 const { preview, uploading, progress, upload } = useImageUpload()
+await upload(file, '/client/uploads')
+```
+
+**Note:** `useForm` and `useFetch` are provided by Inertia.js:
+```js
+import { useForm, usePage } from '@inertiajs/vue3'
+
+// Form handling
+const form = useForm({ name: '', email: '' })
+form.post('/admin/users', {
+  onSuccess: () => router.visit('/admin/users')
+})
+
+// Access page props
+const page = usePage()
+const user = computed(() => page.props.auth?.user)
 ```
 
 ### State Management
 
 **Toast Store** - Show notifications
 ```js
-import { useToastStore } from '@/store'
+import { useToastStore } from '@/store/index'
 const toast = useToastStore()
 
 toast.success('Success message')
@@ -128,126 +135,323 @@ toast.warning('Warning message')
 toast.info('Info message')
 ```
 
-**App Store** - App-level state
+**App Store** - App-level UI state
 ```js
-import { useAppStore } from '@/store'
+import { useAppStore } from '@/store/index'
 const appStore = useAppStore()
 
-appStore.toggleSidebar()
+appStore.toggleDarkMode()
 appStore.setDirection('rtl') // or 'ltr'
 ```
 
-**Module Stores** - Feature-specific state
-```js
-import { useUsersStore } from '@/store/users'
-const usersStore = useUsersStore()
-
-await usersStore.fetchList()
-await usersStore.create(data)
-await usersStore.update(id, data)
-await usersStore.delete(id)
-```
+**⚠️ Important:** Pinia stores are ONLY for UI state (dark mode, toast). Data comes from Inertia props, not stores.
 
 ## Creating a New Module
 
 Follow this example to create a "Products" module:
 
-### 1. Create API Service
+### 1. Create Backend Controller
 
-`resources/js/services/products.js`
-```js
-import api from './api'
+`app/Http/Controllers/Admin/WebProductController.php`
+```php
+use App\Traits\HasDataTableInertia;
+use Inertia\Inertia;
+use Inertia\Response;
 
-export default {
-  async getProducts(params = {}) {
-    return await api.get('/products', params)
-  },
-  async getProduct(id) {
-    return await api.get(`/products/${id}`)
-  },
-  async createProduct(data) {
-    return await api.post('/products', data)
-  },
-  async updateProduct(id, data) {
-    return await api.put(`/products/${id}`, data)
-  },
-  async deleteProduct(id) {
-    return await api.delete(`/products/${id}`)
+class WebProductController extends Controller
+{
+    use HasDataTableInertia;
+
+    public function index(Request $request): Response
+    {
+        return $this->inertiaDataTable(
+            page: 'Modules/admin/Products/ProductsIndex',
+            query: Product::query(),
+            request: $request,
+            resource: ProductResource::class,
+            searchable: ['name', 'sku'],
+            filterable: ['status']
+        );
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('Modules/admin/Products/ProductsForm');
+    }
+
+    public function store(StoreProductRequest $request): RedirectResponse
+    {
+        $this->service->create($request->validated());
+        
+        return redirect()->route('admin.products.index')
+            ->with('success', __('messages.product.created'));
+    }
+}
+```
+
+### 2. Create Service
+
+`app/Services/Admin/ProductService.php`
+```php
+class ProductService
+{
+    public function create(array $data): Product
+    {
+        return DB::transaction(fn() => Product::create($data));
+    }
+}
+```
+
+### 3. Create Request
+
+`app/Http/Requests/Admin/StoreProductRequest.php`
+```php
+class StoreProductRequest extends FormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'sku' => ['required', 'string', 'unique:products,sku'],
+        ];
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(
+            back()->withErrors($validator->errors())->withInput()
+        );
+    }
+}
+```
+
+### 4. Create Resource
+
+`app/Http/Resources/Admin/ProductResource.php`
+```php
+class ProductResource extends JsonResource
+{
+    public function toArray($request): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'sku' => $this->sku,
+            'created_at' => $this->created_at,
+        ];
+    }
+}
+```
+
+### 5. Add Routes
+
+In `routes/web.php`:
+```php
+Route::middleware(['auth', 'permission:products.view'])->group(function () {
+    Route::resource('products', WebProductController::class);
+});
+```
+
+### 6. Create Frontend Pages
+
+**Index Page** - `resources/js/pages/Modules/admin/Products/ProductsIndex.vue`
+```vue
+<script setup>
+import { computed } from 'vue'
+import { Head, Link, usePage } from '@inertiajs/vue3'
+import { useI18n } from 'vue-i18n'
+import DataTable from '@/components/tables/DataTable.vue'
+
+const { t } = useI18n()
+const page = usePage()
+
+// Data comes from Inertia props
+const products = computed(() => page.props.products || [])
+const meta = computed(() => page.props.meta || {})
+
+const columns = computed(() => [
+  { key: 'name', label: t('products.fields.name'), sortable: true },
+  { key: 'sku', label: t('products.fields.sku'), sortable: true },
+])
+</script>
+
+<template>
+  <Head :title="$t('products.title')" />
+  
+  <div class="mb-4">
+    <Link href="/admin/products/create" class="btn-primary">
+      {{ $t('products.create') }}
+    </Link>
+  </div>
+
+  <DataTable
+    :columns="columns"
+    :data="products"
+    :meta="meta"
+  />
+</template>
+```
+
+**Form Page** - `resources/js/pages/Modules/admin/Products/ProductsForm.vue`
+```vue
+<script setup>
+import { Head, useForm, router } from '@inertiajs/vue3'
+import { useI18n } from 'vue-i18n'
+import { useToastStore } from '@/store/index'
+import TextInput from '@/components/inputs/TextInput.vue'
+import Button from '@/components/ui/Button.vue'
+
+const { t } = useI18n()
+const toast = useToastStore()
+const page = usePage()
+
+// Use Inertia's useForm
+const form = useForm({
+  name: page.props.product?.name || '',
+  sku: page.props.product?.sku || '',
+})
+
+const handleSubmit = () => {
+  const url = page.props.product 
+    ? `/admin/products/${page.props.product.id}`
+    : '/admin/products'
+  
+  const method = page.props.product ? 'put' : 'post'
+  
+  form[method](url, {
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success(t('products.saved'))
+      router.visit('/admin/products')
+    }
+  })
+}
+</script>
+
+<template>
+  <Head :title="$t('products.form.title')" />
+  
+  <form @submit.prevent="handleSubmit">
+    <TextInput
+      v-model="form.name"
+      :label="$t('products.fields.name')"
+      :error="form.errors.name"
+      required
+    />
+    
+    <TextInput
+      v-model="form.sku"
+      :label="$t('products.fields.sku')"
+      :error="form.errors.sku"
+      required
+    />
+    
+    <Button type="submit" :loading="form.processing">
+      {{ $t('common.save') }}
+    </Button>
+  </form>
+</template>
+```
+
+### 7. Add Translations
+
+In `resources/js/i18n/locales/en.json`:
+```json
+{
+  "products": {
+    "title": "Products",
+    "create": "Create Product",
+    "saved": "Product saved successfully",
+    "fields": {
+      "name": "Name",
+      "sku": "SKU"
+    },
+    "form": {
+      "title": "Create Product"
+    }
   }
 }
 ```
 
-### 2. Create Pinia Store
+## Inertia.js Patterns
 
-`resources/js/store/products.js`
+### Navigation
+
 ```js
-import { defineStore } from 'pinia'
-import productsService from '@/services/products'
+import { router, Link } from '@inertiajs/vue3'
 
-export const useProductsStore = defineStore('products', {
-  state: () => ({
-    items: [],
-    meta: null,
-    loading: false
-  }),
+// Programmatic navigation
+router.visit('/admin/products')
+router.get('/admin/products', { search: 'query' })
+router.post('/admin/products', formData)
 
-  actions: {
-    async fetchList(params = {}) {
-      this.loading = true
-      try {
-        const response = await productsService.getProducts(params)
-        this.items = response.data
-        this.meta = response.meta
-      } finally {
-        this.loading = false
-      }
-    }
-    // Add other actions...
+// Link component
+<Link href="/admin/products">Products</Link>
+```
+
+### Form Handling
+
+```js
+import { useForm } from '@inertiajs/vue3'
+
+const form = useForm({
+  name: '',
+  email: ''
+})
+
+form.post('/admin/users', {
+  preserveScroll: true,
+  onSuccess: () => {
+    toast.success('User created')
+  },
+  onError: (errors) => {
+    // Errors automatically in form.errors
   }
 })
+
+// Access form state
+form.processing  // Boolean
+form.errors      // Object
+form.hasErrors   // Boolean
 ```
 
-### 3. Create Pages
+### Accessing Props
 
-Create `resources/js/pages/Modules/Products/ProductsIndex.vue` and `ProductsForm.vue` similar to the Users module.
-
-### 4. Add Routes
-
-In `resources/js/router/index.js`:
 ```js
-{
-  path: 'products',
-  name: 'products.index',
-  component: () => import('@/pages/Modules/Products/ProductsIndex.vue'),
-  meta: { title: 'Products' }
-},
-{
-  path: 'products/create',
-  name: 'products.create',
-  component: () => import('@/pages/Modules/Products/ProductsForm.vue'),
-  meta: { title: 'Create Product' }
-}
+import { usePage } from '@inertiajs/vue3'
+
+const page = usePage()
+
+// Access props
+const user = computed(() => page.props.auth?.user)
+const products = computed(() => page.props.products || [])
+const flash = computed(() => page.props.flash)
 ```
 
-### 5. Add to Sidebar
+### Flash Messages
 
-In `resources/js/components/layout/Sidebar.vue`, add to `menuItems`:
-```js
-{
-  name: 'products',
-  label: 'Products',
-  route: '/products',
-  icon: () => h('svg', { /* icon SVG */ })
-}
-```
-
-### 6. Create API Endpoints
-
-Add routes in `routes/api.php`:
 ```php
-Route::prefix('products')->group(function () {
-  Route::apiResource('/', ProductController::class);
-});
+// Backend
+return redirect()->route('admin.products.index')
+    ->with('success', __('messages.product.created'));
+```
+
+```vue
+<!-- Frontend -->
+<script setup>
+import { usePage } from '@inertiajs/vue3'
+import { watch } from 'vue'
+import { useToastStore } from '@/store/index'
+
+const page = usePage()
+const toast = useToastStore()
+
+watch(() => page.props.flash?.success, (message) => {
+  if (message) {
+    toast.success(message)
+  }
+})
+</script>
 ```
 
 ## RTL/LTR Support
@@ -266,64 +470,6 @@ When writing components, use Tailwind's logical properties:
 - ✅ `start`/`end` instead of `left`/`right`
 - ✅ `ms`/`me` instead of `ml`/`mr`
 - ✅ `ps`/`pe` instead of `pl`/`pr`
-
-## API Response Format
-
-All API endpoints should return data in this format:
-
-**List Response:**
-```json
-{
-  "data": [...],
-  "meta": {
-    "current_page": 1,
-    "last_page": 5,
-    "per_page": 15,
-    "total": 75,
-    "from": 1,
-    "to": 15
-  }
-}
-```
-
-**Single Resource:**
-```json
-{
-  "data": { "id": 1, "name": "..." }
-}
-```
-
-**Success/Error:**
-```json
-{
-  "message": "Operation successful",
-  "data": { ... }
-}
-```
-
-**Validation Errors:**
-```json
-{
-  "message": "Validation failed",
-  "errors": {
-    "email": ["The email field is required."],
-    "name": ["The name field is required."]
-  }
-}
-```
-
-## Utility Helpers
-
-Available in `@/utils/helpers.js`:
-
-```js
-import { formatDate, formatCurrency, truncate, debounce } from '@/utils/helpers'
-
-formatDate('2024-01-01', 'long') // January 1, 2024
-formatCurrency(1234.56) // $1,234.56
-truncate('Long text...', 10) // Long text...
-debounce(searchFunction, 300) // Debounced function
-```
 
 ## Building for Production
 
@@ -345,20 +491,38 @@ php artisan view:cache
 
 **Vue components not rendering:**
 - Check browser console for errors
-- Verify `@vite` directive in blade template
+- Verify `@inertia` directive in blade template
 - Ensure dev server is running
 
-**API calls failing:**
+**Forms not submitting:**
 - Check CSRF token in meta tag
-- Verify API routes in `routes/api.php`
+- Verify routes in `routes/web.php`
 - Check browser network tab for error details
+- Ensure `failedValidation()` is overridden in FormRequest
+
+**Props not available:**
+- Verify controller returns `Inertia::render()`
+- Check `HandleInertiaRequests` middleware is registered
+- Ensure props are passed in controller
+
+## Key Differences: SPA vs Inertia
+
+| Feature | Old (SPA) | New (Inertia) |
+|---------|-----------|---------------|
+| Data Fetching | API calls in mounted() | Props from controller |
+| Navigation | Vue Router | Inertia Link/router |
+| Forms | Axios POST | useForm().post() |
+| State | Pinia stores | Inertia page props |
+| Auth | Token in localStorage | Session cookies |
+| Loading | Manual loading states | form.processing |
+| Errors | Manual error handling | form.errors |
+| Redirects | router.push() | return redirect() |
 
 ## Next Steps
 
 1. Customize the design and colors in `tailwind.config.js`
-2. Add authentication (Laravel Sanctum/Breeze)
-3. Create more modules following the Users example
-4. Add real backend controllers and models
-5. Set up production deployment
+2. Create more modules following the Products example
+3. Add real backend controllers and models
+4. Set up production deployment
 
 For more information, see `CLAUDE.md` for detailed documentation.
