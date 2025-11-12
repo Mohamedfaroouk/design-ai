@@ -22,6 +22,7 @@ class AIImageController extends Controller
             'products' => ['required', 'array', 'min:1'],
             'products.*.prompt' => ['required', 'string', 'min:10'],
             'products.*.product_name' => ['required', 'string'],
+            'products.*.product_id' => ['nullable', 'integer', 'exists:products,id'],
             'products.*.image_urls' => ['nullable', 'array'],
             'products.*.image_urls.*' => ['string', 'url'],
             'image_size' => ['nullable', 'string', 'in:1:1,16:9,9:16,4:3,3:4'],

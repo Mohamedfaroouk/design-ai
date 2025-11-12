@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class AIGenerationJob extends Model
+class AIGenerationJob extends Model implements HasMedia
 {
+    use InteractsWithMedia;
     protected $table = 'ai_generation_jobs';
     protected $fillable = [
         'user_id',
@@ -107,5 +111,44 @@ class AIGenerationJob extends Model
     public function isFailed(): bool
     {
         return $this->status === self::STATUS_FAILED;
+    }
+
+    /**
+     * Register media conversions for thumbnails
+     */
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        // Small thumbnail for table listings (100x100)
+        $this->addMediaConversion('thumb')
+            ->width(100)
+            ->height(100)
+            ->sharpen(10)
+            ->nonQueued()
+            ->performOnCollections('ai-images');
+
+        // Medium thumbnail for preview (300x300)
+        $this->addMediaConversion('preview')
+            ->width(300)
+            ->height(300)
+            ->sharpen(10)
+            ->nonQueued()
+            ->performOnCollections('ai-images');
+
+        // Large optimized version for full view (1024x1024)
+        $this->addMediaConversion('large')
+            ->width(1024)
+            ->height(1024)
+            ->sharpen(5)
+            ->performOnCollections('ai-images');
+    }
+
+    /**
+     * Register media collections
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('ai-images')
+            ->useFallbackUrl('/images/placeholder.png')
+            ->useFallbackPath(public_path('/images/placeholder.png'));
     }
 }

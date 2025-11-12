@@ -3,6 +3,7 @@
 namespace App\Services\Client;
 
 use App\Models\AIGenerationJob;
+use App\Models\ProductImage;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -266,41 +267,115 @@ class AIImageService
      */
     private function handleSuccessCallback(AIGenerationJob $job, array $data): void
     {
-        // Parse resultJson to extract image URLs
-        $resultJson = $data['resultJson'] ?? null;
-        $imageUrls = [];
+        DB::transaction(function () use ($job, $data) {
+            // Parse resultJson to extract image URLs
+            $resultJson = $data['resultJson'] ?? null;
+            $imageUrls = [];
 
-        if ($resultJson) {
-            $resultData = is_string($resultJson) ? json_decode($resultJson, true) : $resultJson;
+            if ($resultJson) {
+                $resultData = is_string($resultJson) ? json_decode($resultJson, true) : $resultJson;
 
-            if ($resultData && isset($resultData['resultUrls'])) {
-                $imageUrls = $resultData['resultUrls'];
+                if ($resultData && isset($resultData['resultUrls'])) {
+                    $imageUrls = $resultData['resultUrls'];
+                }
             }
-        }
 
-        // Prepare output data
-        $outputData = [
-            'taskId' => $data['taskId'] ?? null,
-            'state' => $data['state'] ?? 'success',
-            'resultUrls' => $imageUrls,
-            'output' => $imageUrls, // For backward compatibility
-            'images' => $imageUrls, // For backward compatibility
-            'generated_image_url' => $imageUrls[0] ?? null, // Primary image
-            'generated_image_path' => null, // Will be set if we download/store locally
-            'filename' => 'generated-' . $job->id . '.png',
-            'consumeCredits' => $data['consumeCredits'] ?? null,
-            'costTime' => $data['costTime'] ?? null,
-            'completeTime' => $data['completeTime'] ?? null,
-        ];
+            // Download and store images with thumbnails using Spatie Media Library
+            $downloadedImages = [];
+            foreach ($imageUrls as $index => $imageUrl) {
+                try {
+                    // Download image from URL and attach to model with automatic thumbnail generation
+                    $media = $job->addMediaFromUrl($imageUrl)
+                        ->usingFileName('ai-generated-' . $job->id . '-' . ($index + 1) . '.png')
+                        ->usingName('AI Generated Image ' . ($index + 1))
+                        ->withCustomProperties([
+                            'job_id' => $job->job_id,
+                            'prompt' => $job->input_data['prompt'] ?? null,
+                            'image_size' => $job->input_data['image_size'] ?? null,
+                            'output_format' => $job->input_data['output_format'] ?? null,
+                        ])
+                        ->toMediaCollection('ai-images');
 
-        // Mark job as completed with output data
-        $job->markAsCompleted($outputData);
+                    $downloadedImages[] = [
+                        'original_url' => $imageUrl,
+                        'stored_url' => $media->getUrl(),
+                        'thumb_url' => $media->getUrl('thumb'),
+                        'preview_url' => $media->getUrl('preview'),
+                        'large_url' => $media->getUrl('large'),
+                        'media_id' => $media->id,
+                    ];
 
-        Log::info('Job completed successfully via callback', [
-            'job_id' => $job->job_id,
-            'image_count' => count($imageUrls),
-            'images' => $imageUrls,
-        ]);
+                    Log::info('Image downloaded and thumbnails generated', [
+                        'job_id' => $job->job_id,
+                        'media_id' => $media->id,
+                        'original_url' => $imageUrl,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to download image', [
+                        'job_id' => $job->job_id,
+                        'image_url' => $imageUrl,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            // Prepare output data
+            $outputData = [
+                'taskId' => $data['taskId'] ?? null,
+                'state' => $data['state'] ?? 'success',
+                'resultUrls' => $imageUrls,
+                'output' => $imageUrls, // For backward compatibility
+                'images' => $imageUrls, // For backward compatibility
+                'downloaded_images' => $downloadedImages,
+                'generated_image_url' => $imageUrls[0] ?? null, // Primary image
+                'generated_image_path' => $downloadedImages[0]['stored_url'] ?? null,
+                'filename' => 'generated-' . $job->id . '.png',
+                'consumeCredits' => $data['consumeCredits'] ?? null,
+                'costTime' => $data['costTime'] ?? null,
+                'completeTime' => $data['completeTime'] ?? null,
+            ];
+
+            // Mark job as completed with output data
+            $job->markAsCompleted($outputData);
+
+            // Save to product_images if product_id exists
+            $productId = $job->input_data['product_id'] ?? null;
+            if ($productId && !empty($downloadedImages)) {
+                foreach ($downloadedImages as $imageData) {
+                    ProductImage::create([
+                        'product_id' => $productId,
+                        'user_id' => $job->user_id,
+                        'prompt' => $job->input_data['prompt'] ?? null,
+                        'style' => $job->input_data['style'] ?? null,
+                        'image_url' => $imageData['stored_url'],
+                        'status' => 'completed',
+                        'metadata' => [
+                            'ai_generation_job_id' => $job->id,
+                            'job_id' => $job->job_id,
+                            'media_id' => $imageData['media_id'],
+                            'thumb_url' => $imageData['thumb_url'],
+                            'preview_url' => $imageData['preview_url'],
+                            'large_url' => $imageData['large_url'],
+                            'original_url' => $imageData['original_url'],
+                            'image_size' => $job->input_data['image_size'] ?? null,
+                            'output_format' => $job->input_data['output_format'] ?? null,
+                        ],
+                    ]);
+                }
+
+                Log::info('Product images saved', [
+                    'product_id' => $productId,
+                    'job_id' => $job->job_id,
+                    'image_count' => count($downloadedImages),
+                ]);
+            }
+
+            Log::info('Job completed successfully via callback', [
+                'job_id' => $job->job_id,
+                'image_count' => count($imageUrls),
+                'downloaded_count' => count($downloadedImages),
+            ]);
+        });
     }
 
     /**

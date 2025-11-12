@@ -1,7 +1,7 @@
 <template>
     <div
-        :class="appStore.darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'"
-        class="min-h-screen py-8 transition-colors"
+        :class="appStore.darkMode ? 'bg-gray-900/60 text-gray-100' : 'bg-gray-50/60 text-gray-900'"
+        class=" py-8 transition-colors rounded-lg"
     >
         <div class="max-w-6xl mx-auto px-4">
             <!-- Header -->
@@ -67,8 +67,8 @@
             <div
                 :class="
                     appStore.darkMode
-                        ? 'bg-gray-800 border-gray-700'
-                        : 'bg-white border-gray-200'
+                        ? 'bg-gray-800/60 border-gray-700/60'
+                        : 'bg-white/60 border-gray-200/60'
                 "
                 class="rounded-lg border p-8 transition-colors"
             >
@@ -114,12 +114,60 @@
                         {{ $t('ai.wizard.product.title') }}
                     </h2>
 
-                    <!-- Manual Entry Form with Repeater (for "Other" platform) -->
+                    <!-- Product Selection & Manual Entry (for "Other" platform) -->
                     <div v-if="formData.platform === 'other'" class="space-y-6">
-                        <div
-                            v-for="(product, index) in formData.products"
-                            :key="index"
-                            :class="
+                        <!-- Existing Products Selection -->
+                        <div v-if="existingProducts.length > 0" class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-lg">
+                                    {{ $t('ai.wizard.product.selectExisting') }}
+                                </h3>
+                                <Button variant="secondary" size="sm" @click="showNewProductForm = !showNewProductForm">
+                                    {{ showNewProductForm ? $t('ai.wizard.product.hideNew') : $t('ai.wizard.product.addNew') }}
+                                </Button>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div
+                                    v-for="product in existingProducts"
+                                    :key="product.id"
+                                    @click="toggleProductSelection(product)"
+                                    class="p-4 rounded-lg border-2 cursor-pointer transition-all"
+                                    :class="{
+                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20':
+                                            selectedProductIds.includes(product.id),
+                                        'border-gray-300 dark:border-gray-600 hover:border-primary-400':
+                                            !selectedProductIds.includes(product.id),
+                                    }"
+                                >
+                                    <div v-if="product.image_url || product.latest_image" class="mb-3">
+                                        <img
+                                            :src="product.latest_image || product.image_url"
+                                            :alt="product.name"
+                                            class="w-full h-32 object-cover rounded"
+                                        />
+                                    </div>
+                                    <h4 class="font-medium mb-1">{{ product.name }}</h4>
+                                    <p
+                                        v-if="product.description"
+                                        :class="appStore.darkMode ? 'text-gray-400' : 'text-gray-600'"
+                                        class="text-xs line-clamp-2"
+                                    >
+                                        {{ product.description }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- New Product Form -->
+                        <div v-if="existingProducts.length === 0 || showNewProductForm" class="space-y-6">
+                            <h3 v-if="existingProducts.length > 0" class="font-semibold text-lg">
+                                {{ $t('ai.wizard.product.addNewProduct') }}
+                            </h3>
+                            <div
+                                v-for="(product, index) in formData.products"
+                                :key="index"
+                                :class="
                                 appStore.darkMode
                                     ? 'bg-gray-700 border-gray-600'
                                     : 'bg-gray-50 border-gray-200'
@@ -169,20 +217,21 @@
                         </div>
 
                         <!-- Add Product Button -->
-                        <button
-                            @click="addProduct"
-                            :class="
-                                appStore.darkMode
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                            "
-                            class="w-full p-4 rounded-lg border-2 border-dashed transition-all flex items-center justify-center gap-2"
-                        >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            {{ $t('ai.wizard.product.add_another') }}
-                        </button>
+                            <button
+                                @click="addProduct"
+                                :class="
+                                    appStore.darkMode
+                                        ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                "
+                                class="w-full p-4 rounded-lg border-2 border-dashed transition-all flex items-center justify-center gap-2"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                {{ $t('ai.wizard.product.add_another') }}
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Store Integration (Salla/Zid) - Multi-select placeholder -->
@@ -521,10 +570,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useToastStore } from '@/store/index'
+import { useClientProductsStore } from '@/store/client/products'
 import { buildPrompt } from '@/composables/useAIPromptBuilder'
 import aiImageService from '@/services/client/aiImage'
 import authService from '@/services/auth'
@@ -535,12 +585,17 @@ import Button from '@/components/ui/Button.vue'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const appStore = useAppStore()
 const toast = useToastStore()
+const productsStore = useClientProductsStore()
 
 const steps = ['storeType', 'product', 'category', 'design', 'customize', 'review']
 const currentStep = ref(0)
 const generating = ref(false)
+const showNewProductForm = ref(false)
+const selectedProductIds = ref([])
+const existingProducts = ref([])
 
 // Get current user
 const currentUser = computed(() => authService.getUser())
@@ -616,7 +671,9 @@ const canProceed = computed(() => {
             return formData.value.platform !== ''
         case 1:
             if (formData.value.platform === 'other') {
-                return formData.value.products.some(p => p.productName !== '')
+                const hasNewProducts = formData.value.products.some(p => p.productName !== '')
+                const hasSelectedProducts = selectedProductIds.value.length > 0
+                return hasNewProducts || hasSelectedProducts
             }
             return true // For Salla/Zid (coming soon)
         case 2:
@@ -691,31 +748,69 @@ const generateImages = async () => {
     generating.value = true
 
     try {
-        // Build products payload
-        const products = formData.value.products.map((product) => {
-            const promptData = buildPrompt({
-                ...formData.value,
-                productName: product.productName,
-                description: product.description,
-                productImageUrl: product.productImageUrl,
-            })
+        const allProducts = []
 
-            return {
-                prompt: promptData.prompt,
-                product_name: product.productName,
-                image_urls: promptData.image_urls,
+        // Handle selected existing products
+        if (selectedProductIds.value.length > 0) {
+            const selectedProducts = existingProducts.value.filter(p =>
+                selectedProductIds.value.includes(p.id)
+            )
+
+            for (const product of selectedProducts) {
+                const promptData = buildPrompt({
+                    ...formData.value,
+                    productName: product.name,
+                    description: product.description,
+                    productImageUrl: product.image_url,
+                })
+
+                allProducts.push({
+                    prompt: promptData.prompt,
+                    product_name: product.name,
+                    product_id: product.id, // Link to existing product
+                    image_urls: promptData.image_urls,
+                })
             }
-        })
+        }
+
+        // Handle new products - save them first
+        if (formData.value.products.some(p => p.productName)) {
+            for (const product of formData.value.products) {
+                if (!product.productName) continue
+
+                // Save product to database
+                const savedProduct = await productsStore.create({
+                    platform: 'others',
+                    name: product.productName,
+                    description: product.description,
+                    image_url: product.productImageUrl,
+                })
+
+                const promptData = buildPrompt({
+                    ...formData.value,
+                    productName: product.productName,
+                    description: product.description,
+                    productImageUrl: product.productImageUrl,
+                })
+
+                allProducts.push({
+                    prompt: promptData.prompt,
+                    product_name: product.productName,
+                    product_id: savedProduct.data.id, // Link to newly created product
+                    image_urls: promptData.image_urls,
+                })
+            }
+        }
 
         const response = await aiImageService.generate({
-            products: products,
+            products: allProducts,
             image_size: '1:1',
             output_format: 'png',
         })
 
         // Show success message
         toast.success(
-            t('ai.wizard.batch_success', { count: formData.value.products.length })
+            t('ai.wizard.batch_success', { count: allProducts.length })
         )
 
         // Navigate to AI generations index
@@ -740,4 +835,35 @@ const getBackgroundLabel = (value) => {
 const getLogoPositionLabel = (value) => {
     return logoPositions.find((p) => p.value === value)?.label || value
 }
+
+// Load existing products
+const loadExistingProducts = async () => {
+    try {
+        const response = await productsStore.fetchList({ platform: 'others', perPage: 100 })
+        existingProducts.value = response.data || []
+
+        // If coming from product detail page, pre-select the product
+        if (route.query.productId) {
+            const productId = parseInt(route.query.productId)
+            selectedProductIds.value = [productId]
+        }
+    } catch (error) {
+        console.error('Failed to load products:', error)
+    }
+}
+
+// Toggle product selection
+const toggleProductSelection = (product) => {
+    const index = selectedProductIds.value.indexOf(product.id)
+    if (index > -1) {
+        selectedProductIds.value.splice(index, 1)
+    } else {
+        selectedProductIds.value.push(product.id)
+    }
+}
+
+// Initialize on mount
+onMounted(() => {
+    loadExistingProducts()
+})
 </script>

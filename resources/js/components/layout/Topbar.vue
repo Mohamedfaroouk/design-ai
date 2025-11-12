@@ -1,6 +1,6 @@
 <template>
     <header
-        class="fixed top-0 end-0 h-20 border-b flex items-center justify-between px-4 sm:px-6 transition-all duration-300 shadow-sm z-20 backdrop-blur-sm"
+        class="fixed top-0 end-0 h-20 border-b flex items-center justify-between px-4 sm:px-6 transition-all duration-300 shadow-sm z-20 backdrop-blur-sm opacity-70"
         :class="[
             appStore.sidebarOpen && !isMobile ? 'start-72' : 'start-0',
             !appStore.sidebarOpen && !isMobile ? 'start-20' : '',
@@ -45,7 +45,7 @@
                 </svg>
             </button>
 
-            <!-- Page Title with Icon -->
+            <!-- Page Title with Icon
             <div class="flex items-center gap-3 min-w-0">
                 <div class="hidden sm:flex w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary items-center justify-center shadow-lg flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,7 +53,7 @@
                     </svg>
                 </div>
                 <div class="min-w-0">
-                    <h2 class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent truncate">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-100 ">
                         {{ pageTitle }}
                     </h2>
                     <p class="text-xs hidden sm:block"
@@ -61,12 +61,12 @@
                         {{ $t('topbar.welcomeBack') }}
                     </p>
                 </div>
-            </div>
+            </div> -->
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
             <!-- Search (Desktop) -->
-            <button class="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl transition-all group"
+            <!-- <button class="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl transition-all group"
                     :class="appStore.darkMode
                         ? 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200'
                         : 'bg-white border border-primary-200 hover:border-primary-300 text-gray-400 hover:text-gray-600'">
@@ -76,7 +76,7 @@
                 <span class="text-sm">{{ $t('common.search') }}</span>
                 <kbd class="hidden lg:inline-block px-2 py-0.5 text-xs rounded"
                      :class="appStore.darkMode ? 'bg-gray-700' : 'bg-gray-100'">⌘K</kbd>
-            </button>
+            </button> -->
 
             <!-- Dark Mode Toggle -->
             <DarkModeToggle />

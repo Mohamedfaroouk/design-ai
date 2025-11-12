@@ -1,13 +1,13 @@
 <template>
-    <div class="backdrop-blur-sm rounded-xl shadow-md border overflow-hidden transition-colors"
+    <div class=" rounded-xl  border overflow-hidden transition-colors opacity-90"
          :class="appStore.darkMode
-             ? 'bg-gray-800/90 border-gray-700'
-             : 'bg-white/50 border-primary-100'">
+             ? 'bg-gray-800/40 border-gray-700/50 shadow-2xl'
+             : 'bg-white/30 border-primary-100/50 '">
         <!-- Search and filters -->
-        <div v-if="searchable || filterable" class="p-3 border-b transition-colors"
+        <div v-if="searchable || filterable" class="p-3 border-b transition-colors backdrop-blur-md"
              :class="appStore.darkMode
-                 ? 'bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700'
-                 : 'bg-gradient-to-r from-primary-50 to-secondary-50 border-primary-100'">
+                 ? 'bg-gradient-to-r from-gray-800/30 to-gray-900/30 border-gray-700/50'
+                 : 'bg-gradient-to-r from-primary-50/40 to-secondary-50/40 border-primary-100/50'">
             <div class="flex flex-col sm:flex-row gap-2">
                 <div v-if="searchable" class="flex-1 relative group">
                     <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
@@ -19,20 +19,20 @@
                         v-model="localSearch"
                         type="text"
                         :placeholder="t('common.search')"
-                        class="w-full ps-9 pe-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-all backdrop-blur-sm"
+                        class="w-full ps-9 pe-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-all backdrop-blur-md"
                         :class="appStore.darkMode
-                            ? 'bg-gray-900/50 border-gray-600 text-gray-200 placeholder-gray-500 focus:border-primary-400 focus:ring-primary-900/50'
-                            : 'bg-white/50 border-primary-200 focus:border-primary-500 focus:ring-primary-100'"
+                            ? 'bg-gray-900/30 border-gray-600/50 text-gray-200 placeholder-gray-500 focus:border-primary-400 focus:ring-primary-900/50'
+                            : 'bg-white/30 border-primary-200/50 focus:border-primary-500 focus:ring-primary-100'"
                     />
                 </div>
                 <div v-if="filterable" class="flex gap-2">
                     <button
                         @click="showFilters = !showFilters"
-                        class="px-3 py-2 text-sm border rounded-lg font-medium transition-all flex items-center gap-2 relative"
+                        class="px-3 py-2 text-sm border rounded-lg font-medium transition-all flex items-center gap-2 relative backdrop-blur-md"
                         :class="[
                             appStore.darkMode
-                                ? 'bg-gray-900/50 border-gray-600 text-gray-200 hover:bg-gray-700 hover:border-gray-500'
-                                : 'bg-white/50 border-primary-200 hover:bg-primary-50 hover:border-primary-300',
+                                ? 'bg-gray-900/30 border-gray-600/50 text-gray-200 hover:bg-gray-700/50 hover:border-gray-500/70'
+                                : 'bg-white/30 border-primary-200/50 hover:bg-primary-50/50 hover:border-primary-300/70',
                             hasActiveFilters ? 'ring-2 ring-primary-500' : ''
                         ]"
                     >
@@ -132,10 +132,10 @@
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y transition-colors"
                    :class="appStore.darkMode ? 'divide-gray-700' : 'divide-primary-100'">
-                <thead class="transition-colors"
+                <thead class="transition-colors backdrop-blur-md"
                        :class="appStore.darkMode
-                           ? 'bg-gradient-to-r from-gray-800 to-gray-900'
-                           : 'bg-gradient-to-r from-primary-50 to-secondary-50'">
+                           ? 'bg-gradient-to-r from-gray-800/30 to-gray-900/30'
+                           : 'bg-gradient-to-r from-primary-50/40 to-secondary-50/40'">
                     <tr>
                         <th
                             v-for="column in columns"
@@ -146,8 +146,8 @@
                                 appStore.darkMode ? 'text-gray-300' : 'text-gray-900',
                                 column.sortable
                                     ? appStore.darkMode
-                                        ? 'cursor-pointer hover:bg-gray-700/50'
-                                        : 'cursor-pointer hover:bg-primary-100/50'
+                                        ? 'cursor-pointer hover:bg-gray-700/30'
+                                        : 'cursor-pointer hover:bg-primary-100/30'
                                     : '',
                                 column.align === 'center' ? 'text-center' : column.align === 'end' ? 'text-end' : 'text-start'
                             ]"
@@ -187,10 +187,10 @@
                         </th>
                     </tr>
                 </thead>
-                <tbody class="backdrop-blur-sm divide-y transition-colors"
+                <tbody class="backdrop-blur-md divide-y transition-colors"
                        :class="appStore.darkMode
-                           ? 'bg-gray-900/50 divide-gray-700'
-                           : 'bg-white/50 divide-primary-50'">
+                           ? 'bg-gray-900/20 divide-gray-700/50'
+                           : 'bg-white/20 divide-primary-50/50'">
                     <tr v-if="loading">
                         <td :colspan="columns.length + ($slots.actions ? 1 : 0)" class="px-4 py-3 text-center">
                             <div class="flex justify-center">
@@ -229,7 +229,7 @@
                         </td>
                     </tr>
                     <tr v-else v-for="(row, index) in localData" :key="index" class="transition-colors"
-                        :class="appStore.darkMode ? 'hover:bg-gray-700/50' : 'hover:bg-primary-50/50'">
+                        :class="appStore.darkMode ? 'hover:bg-gray-700/30' : 'hover:bg-primary-50/30'">
                         <td
                             v-for="column in columns"
                             :key="column.key"
@@ -254,10 +254,10 @@
         </div>
 
         <!-- Pagination -->
-        <div v-if="paginated && meta" class="px-4 py-3 border-t transition-colors"
+        <div v-if="paginated && meta" class="px-4 py-3 border-t transition-colors backdrop-blur-md"
              :class="appStore.darkMode
-                 ? 'bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700'
-                 : 'bg-gradient-to-r from-primary-50 to-secondary-50 border-primary-100'">
+                 ? 'bg-gradient-to-r from-gray-800/30 to-gray-900/30 border-gray-700/50'
+                 : 'bg-gradient-to-r from-primary-50/40 to-secondary-50/40 border-primary-100/50'">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div class="text-xs font-medium"
                      :class="appStore.darkMode ? 'text-gray-300' : 'text-gray-700'">
@@ -273,10 +273,10 @@
                     <button
                         @click="goToPage(meta.current_page - 1)"
                         :disabled="meta.current_page <= 1"
-                        class="px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        class="px-3 py-1.5 border rounded-lg text-xs font-medium backdrop-blur-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         :class="appStore.darkMode
-                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
-                            : 'border-primary-200 text-gray-700 hover:border-primary-300'"
+                            ? 'bg-gray-900/20 border-gray-600/50 text-gray-300 hover:bg-gray-700/40 hover:border-gray-500/70'
+                            : 'bg-white/20 border-primary-200/50 text-gray-700 hover:bg-white/40 hover:border-primary-300/70'"
                     >
                         {{ t('common.previous') }}
                     </button>
@@ -284,13 +284,13 @@
                         v-for="page in visiblePages"
                         :key="page"
                         @click="goToPage(page)"
-                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-w-[32px]"
+                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-w-[32px] backdrop-blur-md"
                         :class="
                             page === meta.current_page
                                 ? 'bg-gradient-to-r from-primary to-secondary text-white border-transparent shadow-md'
                                 : appStore.darkMode
-                                    ? 'border border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
-                                    : 'border border-primary-200 text-gray-700 hover:bg-white hover:border-primary-300'
+                                    ? 'bg-gray-900/20 border border-gray-600/50 text-gray-300 hover:bg-gray-700/40 hover:border-gray-500/70'
+                                    : 'bg-white/20 border border-primary-200/50 text-gray-700 hover:bg-white/40 hover:border-primary-300/70'
                         "
                     >
                         {{ page }}
@@ -298,10 +298,10 @@
                     <button
                         @click="goToPage(meta.current_page + 1)"
                         :disabled="meta.current_page >= meta.last_page"
-                        class="px-3 py-1.5 border rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        class="px-3 py-1.5 border rounded-lg text-xs font-medium backdrop-blur-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         :class="appStore.darkMode
-                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
-                            : 'border-primary-200 text-gray-700 hover:bg-white hover:border-primary-300'"
+                            ? 'bg-gray-900/20 border-gray-600/50 text-gray-300 hover:bg-gray-700/40 hover:border-gray-500/70'
+                            : 'bg-white/20 border-primary-200/50 text-gray-700 hover:bg-white/40 hover:border-primary-300/70'"
                     >
                         {{ t('common.next') }}
                     </button>

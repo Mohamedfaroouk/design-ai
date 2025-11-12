@@ -114,6 +114,7 @@ const routes = [
             {
                 path: 'ai-image-generator',
                 name: 'client.ai.wizard',
+                alias: 'client.image-wizard',
                 component: () => import('@/pages/Modules/client/ImageWizard.vue'),
                 meta: { title: 'AI Product Image Generator' }
             },
@@ -122,6 +123,18 @@ const routes = [
                 name: 'client.ai-generations.index',
                 component: () => import('@/pages/Modules/client/AiGenerationIndex.vue'),
                 meta: { title: 'AI Generation History' }
+            },
+            {
+                path: 'products',
+                name: 'client.products.index',
+                component: () => import('@/pages/Modules/client/Products/ProductsIndex.vue'),
+                meta: { title: 'My Products' }
+            },
+            {
+                path: 'products/:id',
+                name: 'client.products.detail',
+                component: () => import('@/pages/Modules/client/Products/ProductDetail.vue'),
+                meta: { title: 'Product Detail' }
             },
         ]
     },

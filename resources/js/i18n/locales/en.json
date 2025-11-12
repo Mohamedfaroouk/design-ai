@@ -6,6 +6,7 @@
         "delete": "Delete",
         "edit": "Edit",
         "view": "View",
+        "back": "Back",
         "actions": "Actions",
         "create": "Create",
         "update": "Update",
@@ -146,6 +147,7 @@
         "analytics": "Analytics",
         "profile": "My Profile",
         "ai_image_generator": "AI Image Generator",
+        "products": "My Products",
         "ai_generations": "Generation History"
     },
     "topbar": {
@@ -341,7 +343,11 @@
                 "multiSelectPlaceholder": "When available, you'll be able to select multiple products from your store",
                 "item_number": "Product #{number}",
                 "add_another": "Add Another Product",
-                "remove": "Remove Product"
+                "remove": "Remove Product",
+                "selectExisting": "Select Existing Products",
+                "addNew": "Add New Product",
+                "hideNew": "Hide New Product Form",
+                "addNewProduct": "Add New Product"
             },
             "category": {
                 "title": "Select Product Category",
@@ -447,6 +453,16 @@
             "message": "Are you sure you want to retry this AI generation?",
             "warning": "Note: If you have already downloaded the generated image, please make sure to save it. The new generation will replace the current result."
         },
+        "preview_modal": {
+            "title": "Image Preview",
+            "product": "Product",
+            "prompt": "Prompt",
+            "status": "Status",
+            "quality": "Quality",
+            "high_quality": "High Quality (1024px)",
+            "medium_quality": "Medium Quality (300px)",
+            "original_quality": "Original"
+        },
         "messages": {
             "download_success": "Image downloaded successfully",
             "retry_success": "AI generation retry started successfully"
@@ -456,8 +472,43 @@
             "not_completed": "This generation is not completed yet",
             "no_image": "No generated image available",
             "image_not_found": "Generated image file not found",
+            "image_load_failed": "Failed to load image",
             "download_failed": "Failed to download image",
             "retry_failed": "Failed to retry generation"
+        }
+    },
+    "products": {
+        "title": "My Products",
+        "subtitle": "Manage your products and AI-generated images",
+        "noDescription": "No description provided",
+        "createNewImage": "Create New AI Image",
+        "createFirstImage": "Create Your First AI Image",
+        "noImagesYet": "No AI Images Yet",
+        "noImagesDescription": "Start creating stunning AI-generated images for this product",
+        "aiGeneratedImages": "AI Generated Images",
+        "fields": {
+            "name": "Name",
+            "description": "Description",
+            "sku": "SKU",
+            "price": "Price",
+            "image": "Image",
+            "platform": "Platform",
+            "aiImagesCount": "AI Images",
+            "createdAt": "Created At"
+        },
+        "platforms": {
+            "salla": "Salla",
+            "zid": "Zid",
+            "others": "Others"
+        },
+        "messages": {
+            "created": "Product created successfully",
+            "updated": "Product updated successfully",
+            "deleted": "Product deleted successfully"
+        },
+        "deleteConfirm": {
+            "title": "Delete Product",
+            "message": "Are you sure you want to delete {name}? This will also delete all AI-generated images for this product."
         }
     }
 }

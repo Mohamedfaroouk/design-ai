@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StoreController;
 use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Client\AiGenerationController;
+use App\Http\Controllers\Client\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Integration\SallaOAuthController;
 use App\Http\Controllers\Integration\SallaWebhookController;
@@ -150,6 +151,15 @@ Route::middleware('auth:sanctum')->prefix('client')->group(function () {
         Route::get('/', [AiGenerationController::class, 'index']);
         Route::post('/{aiGenerationJob}/retry', [AiGenerationController::class, 'retry']);
         Route::get('/{aiGenerationJob}/download', [AiGenerationController::class, 'download']);
+    });
+
+    // Products Management (no permissions required - clients access their own products only)
+    Route::prefix('products')->group(function () {
+        Route::get('/', [ProductController::class, 'index']);
+        Route::post('/', [ProductController::class, 'store']);
+        Route::get('/{product}', [ProductController::class, 'show']);
+        Route::put('/{product}', [ProductController::class, 'update']);
+        Route::delete('/{product}', [ProductController::class, 'destroy']);
     });
 });
 

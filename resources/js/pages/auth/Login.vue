@@ -88,7 +88,7 @@
             </Button>
 
             <!-- Divider -->
-            <div class="relative">
+            <!-- <div class="relative">
                 <div class="absolute inset-0 flex items-center">
                     <div class="w-full border-t"
                          :class="appStore.darkMode ? 'border-gray-700' : 'border-gray-300'"></div>
@@ -99,10 +99,10 @@
                         {{ $t('auth.login.orContinueWith') }}
                     </span>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Social Login Buttons -->
-            <div class="grid grid-cols-2 gap-3">
+            <!-- <div class="grid grid-cols-2 gap-3">
                 <button
                     type="button"
                     @click="handleSocialLogin('google')"
@@ -133,7 +133,7 @@
                     </svg>
                     GitHub
                 </button>
-            </div>
+            </div> -->
         </form>
 
         <!-- Footer Slot -->
