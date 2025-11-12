@@ -1,5 +1,7 @@
 <template>
-    <AuthLayout :title="$t('auth.reset.title')" :subtitle="$t('auth.reset.subtitle')">
+    <div>
+        <Head :title="$t('auth.reset.title')" />
+        
         <form @submit.prevent="handleSubmit" class="space-y-6">
             <!-- Illustration/Icon -->
             <div class="flex justify-center">
@@ -16,9 +18,9 @@
             <!-- Password Input -->
             <TextInput
                 v-model="form.password"
-                :label="$t('auth.reset.newPassword')"
+                :label="$t('auth.reset.password')"
                 :placeholder="$t('auth.reset.passwordPlaceholder')"
-                :error="getError('password')"
+                :error="form.errors.password"
                 :type="showPassword ? 'text' : 'password'"
                 required
                 autocomplete="new-password"
@@ -46,37 +48,19 @@
                 </template>
             </TextInput>
 
-            <!-- Password Strength Indicator -->
-            <div v-if="form.password" class="space-y-2">
-                <div class="flex gap-1">
-                    <div
-                        v-for="i in 4"
-                        :key="i"
-                        class="h-1.5 flex-1 rounded-full transition-all duration-300"
-                        :class="i <= passwordStrength.level
-                            ? passwordStrength.color
-                            : appStore.darkMode ? 'bg-gray-700' : 'bg-gray-200'"
-                    ></div>
-                </div>
-                <p class="text-xs font-medium transition-colors"
-                   :class="passwordStrength.textColor">
-                    {{ passwordStrength.text }}
-                </p>
-            </div>
-
             <!-- Confirm Password Input -->
             <TextInput
                 v-model="form.password_confirmation"
                 :label="$t('auth.reset.confirmPassword')"
                 :placeholder="$t('auth.reset.confirmPasswordPlaceholder')"
-                :error="getError('password_confirmation')"
+                :error="form.errors.password_confirmation"
                 :type="showConfirmPassword ? 'text' : 'password'"
                 required
                 autocomplete="new-password"
             >
                 <template #icon>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                 </template>
                 <template #suffix>
@@ -97,64 +81,50 @@
                 </template>
             </TextInput>
 
-            <!-- Password Requirements -->
-            <div class="rounded-xl p-4 transition-colors"
-                 :class="appStore.darkMode ? 'bg-gray-900/50' : 'bg-gray-50'">
-                <h4 class="text-sm font-semibold mb-2 transition-colors"
-                    :class="appStore.darkMode ? 'text-gray-300' : 'text-gray-700'">
-                    {{ $t('auth.reset.requirements.title') }}
-                </h4>
-                <ul class="space-y-1 text-xs">
-                    <li v-for="(requirement, index) in passwordRequirements"
-                        :key="index"
-                        class="flex items-center gap-2 transition-colors"
-                        :class="requirement.met
-                            ? appStore.darkMode ? 'text-success-400' : 'text-success-600'
-                            : appStore.darkMode ? 'text-gray-500' : 'text-gray-400'">
-                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path v-if="requirement.met" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            <circle v-else cx="12" cy="12" r="10" stroke-width="2" />
-                        </svg>
-                        {{ requirement.text }}
-                    </li>
-                </ul>
-            </div>
-
             <!-- Submit Button -->
             <Button
                 type="submit"
                 variant="primary"
-                :loading="loading"
-                :disabled="!isFormValid"
+                :loading="form.processing"
                 class="w-full"
             >
-                {{ $t('auth.reset.resetButton') }}
+                {{ $t('auth.reset.resetPassword') }}
             </Button>
+
+            <!-- Back to Login Link -->
+            <div class="text-center">
+                <Link
+                    href="/login"
+                    class="inline-flex items-center gap-2 text-sm font-medium transition-colors"
+                    :class="appStore.darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    {{ $t('auth.reset.backToLogin') }}
+                </Link>
+            </div>
         </form>
-    </AuthLayout>
+    </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref } from 'vue'
+import { Head, Link, useForm } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
-import { useForm } from '@/composables/useForm'
 import { useAppStore } from '@/store'
-import { useToastStore } from '@/store'
-import authService from '@/services/auth'
-import AuthLayout from '@/components/layout/AuthLayout.vue'
 import TextInput from '@/components/inputs/TextInput.vue'
 import Button from '@/components/ui/Button.vue'
 
-const router = useRouter()
-const route = useRoute()
+const props = defineProps({
+    email: String
+})
+
 const { t } = useI18n()
 const appStore = useAppStore()
-const toast = useToastStore()
 
-const email = route.query.email || ''
-
-const { form, errors, loading, getError } = useForm({
+const form = useForm({
+    email: props.email,
     password: '',
     password_confirmation: ''
 })
@@ -162,108 +132,7 @@ const { form, errors, loading, getError } = useForm({
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
-const passwordRequirements = computed(() => {
-    const password = form.password
-    return [
-        {
-            text: t('auth.reset.requirements.minLength'),
-            met: password.length >= 8
-        },
-        {
-            text: t('auth.reset.requirements.uppercase'),
-            met: /[A-Z]/.test(password)
-        },
-        {
-            text: t('auth.reset.requirements.lowercase'),
-            met: /[a-z]/.test(password)
-        },
-        {
-            text: t('auth.reset.requirements.number'),
-            met: /\d/.test(password)
-        },
-        {
-            text: t('auth.reset.requirements.special'),
-            met: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-        }
-    ]
-})
-
-const passwordStrength = computed(() => {
-    const metRequirements = passwordRequirements.value.filter(r => r.met).length
-    const password = form.password
-
-    if (!password) {
-        return { level: 0, text: '', color: '', textColor: '' }
-    }
-
-    if (metRequirements <= 2) {
-        return {
-            level: 1,
-            text: t('auth.reset.strength.weak'),
-            color: 'bg-danger-500',
-            textColor: appStore.value.darkMode ? 'text-danger-400' : 'text-danger-600'
-        }
-    } else if (metRequirements === 3) {
-        return {
-            level: 2,
-            text: t('auth.reset.strength.fair'),
-            color: 'bg-warning-500',
-            textColor: appStore.value.darkMode ? 'text-warning-400' : 'text-warning-600'
-        }
-    } else if (metRequirements === 4) {
-        return {
-            level: 3,
-            text: t('auth.reset.strength.good'),
-            color: 'bg-primary-500',
-            textColor: appStore.value.darkMode ? 'text-primary-400' : 'text-primary-600'
-        }
-    } else {
-        return {
-            level: 4,
-            text: t('auth.reset.strength.strong'),
-            color: 'bg-success-500',
-            textColor: appStore.value.darkMode ? 'text-success-400' : 'text-success-600'
-        }
-    }
-})
-
-const isFormValid = computed(() => {
-    return (
-        form.password &&
-        form.password_confirmation &&
-        form.password === form.password_confirmation &&
-        passwordRequirements.value.every(r => r.met)
-    )
-})
-
-const handleSubmit = async () => {
-    if (!isFormValid.value) return
-
-    loading.value = true
-    errors.value = {}
-
-    try {
-        const response = await authService.resetPassword({
-            email: email,
-            password: form.password,
-            password_confirmation: form.password_confirmation
-        })
-
-        toast.success(response.message || t('auth.reset.success'))
-
-        // Redirect to login page after successful password reset
-        setTimeout(() => {
-            router.push('/login')
-        }, 1500)
-    } catch (error) {
-        if (error.errors) {
-            errors.value = error.errors
-        }
-        if (error.status !== 422) {
-            toast.error(error.message || t('auth.reset.error'))
-        }
-    } finally {
-        loading.value = false
-    }
+const handleSubmit = () => {
+    form.post('/reset-password')
 }
 </script>

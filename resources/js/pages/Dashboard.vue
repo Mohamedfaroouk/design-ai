@@ -104,7 +104,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <Button
                         variant="primary"
-                        @click="$router.push('/users/create')"
+                        @click="router.visit('/admin/users/create')"
                         class="justify-center"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,6 +164,7 @@
 
 <script setup>
 import { h } from 'vue'
+import { router } from '@inertiajs/vue3'
 import { useAppStore } from '@/store'
 import Button from '@/components/ui/Button.vue'
 

@@ -53,7 +53,9 @@ export const useAppStore = defineStore('app', {
     state: () => ({
         sidebarOpen: true,
         direction: localStorage.getItem('direction') || 'ltr',
-        darkMode: localStorage.getItem('darkMode') === 'true'
+        darkMode: localStorage.getItem('darkMode') === 'true',
+        profileVideoPlayed: localStorage.getItem('profileVideoPlayed') === 'true',
+        profileVideoCurrentTime: parseFloat(localStorage.getItem('profileVideoCurrentTime') || '0')
     }),
 
     actions: {
@@ -84,6 +86,16 @@ export const useAppStore = defineStore('app', {
             }
             // Initialize direction
             document.documentElement.setAttribute('dir', this.direction)
+        },
+
+        setProfileVideoPlayed(played) {
+            this.profileVideoPlayed = played
+            localStorage.setItem('profileVideoPlayed', played.toString())
+        },
+
+        setProfileVideoCurrentTime(time) {
+            this.profileVideoCurrentTime = time
+            localStorage.setItem('profileVideoCurrentTime', time.toString())
         }
     }
 })

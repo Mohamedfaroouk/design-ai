@@ -1,11 +1,13 @@
 <template>
     <div v-motion-fade>
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-3xl font-bold transition-colors"
-                :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
-                {{ $t('roles.title') }}
-            </h1>
-            <Button variant="primary" @click="$router.push('/admin/roles/create')">
+            <Head :title="$t('roles.title')" />
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-3xl font-bold transition-colors"
+                    :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
+                    {{ $t('roles.title') }}
+                </h1>
+                <Link href="/admin/roles/create">
+                    <Button variant="primary">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                         stroke-linecap="round"
@@ -13,20 +15,22 @@
                         stroke-width="2"
                         d="M12 4v16m8-8H4"
                     />
-                </svg>
-                {{ $t('roles.addNew') }}
-            </Button>
-        </div>
+                    </svg>
+                        {{ $t('roles.addNew') }}
+                    </Button>
+                </Link>
+            </div>
 
-        <DataTable
-            :columns="columns"
-            :data="rolesStore.roles"
-            :meta="rolesStore.meta"
-            :loading="rolesStore.loading"
-            @search="handleSearch"
-            @sort="handleSort"
-            @page-change="handlePageChange"
-        >
+            <DataTable
+                :columns="columns"
+                :data="items"
+                :meta="pagination"
+                :loading="false"
+                :filters="filters"
+                @search="handleSearch"
+                @sort="handleSort"
+                @page-change="handlePageChange"
+            >
             <template #cell-name="{ row }">
                 <div class="flex items-center gap-2">
                     <span :class="appStore.darkMode ? 'text-gray-200' : 'text-gray-900'">
@@ -52,9 +56,9 @@
 
             <template #actions="{ row }">
                 <div class="flex items-center gap-2">
-                    <button
-                        @click="$router.push(`/admin/roles/${row.id}/edit`)"
-                        class="transition-colors"
+                    <Link :href="`/admin/roles/${row.id}/edit`">
+                        <button
+                            class="transition-colors"
                         :class="[
                             appStore.darkMode
                                 ? 'text-indigo-400 hover:text-indigo-300'
@@ -72,6 +76,7 @@
                             />
                         </svg>
                     </button>
+                    </Link>
                     <button
                         @click="confirmDelete(row)"
                         class="transition-colors"
@@ -109,17 +114,17 @@
                 <Button variant="secondary" @click="showDeleteModal = false">
                     {{ $t('common.cancel') }}
                 </Button>
-                <Button variant="danger" :loading="rolesStore.loading" @click="handleDelete">
+                <Button variant="danger" :loading="deleteForm.processing" @click="handleDelete">
                     {{ $t('common.delete') }}
                 </Button>
             </template>
         </Modal>
-    </div>
+        </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useAdminRolesStore } from '@/store/admin/roles'
+import { ref, computed } from 'vue'
+import { Head, Link, router } from '@inertiajs/vue3'
 import { useAppStore } from '@/store'
 import { useToastStore } from '@/store'
 import { useI18n } from 'vue-i18n'
@@ -127,20 +132,28 @@ import DataTable from '@/components/tables/DataTable.vue'
 import Button from '@/components/ui/Button.vue'
 import Modal from '@/components/ui/Modal.vue'
 
-const rolesStore = useAdminRolesStore()
+const props = defineProps({
+    items: {
+        type: Array,
+        required: true
+    },
+    pagination: {
+        type: Object,
+        required: true
+    },
+    filters: {
+        type: Object,
+        required: true
+    }
+})
+
 const appStore = useAppStore()
 const toast = useToastStore()
 const { t } = useI18n()
 
 const showDeleteModal = ref(false)
 const roleToDelete = ref(null)
-const filters = ref({
-    search: '',
-    sortBy: 'created_at',
-    sortOrder: 'desc',
-    page: 1,
-    perPage: 15
-})
+const deleteForm = ref({ processing: false })
 
 const columns = computed(() => [
     { key: 'name', label: t('roles.fields.name'), sortable: true },
@@ -148,29 +161,36 @@ const columns = computed(() => [
     { key: 'created_at', label: t('roles.fields.createdAt'), sortable: true }
 ])
 
-const loadRoles = async () => {
-    try {
-        await rolesStore.fetchList(filters.value)
-    } catch (error) {
-        toast.error(error.message || t('common.error'))
-    }
-}
-
 const handleSearch = (query) => {
-    filters.value.search = query
-    filters.value.page = 1
-    loadRoles()
+    router.get('/admin/roles', {
+        ...props.filters,
+        search: query,
+        page: 1
+    }, {
+        preserveState: true,
+        preserveScroll: true
+    })
 }
 
 const handleSort = ({ column, order }) => {
-    filters.value.sortBy = column
-    filters.value.sortOrder = order
-    loadRoles()
+    router.get('/admin/roles', {
+        ...props.filters,
+        sort_by: column,
+        sort_order: order
+    }, {
+        preserveState: true,
+        preserveScroll: true
+    })
 }
 
 const handlePageChange = (page) => {
-    filters.value.page = page
-    loadRoles()
+    router.get('/admin/roles', {
+        ...props.filters,
+        page: page
+    }, {
+        preserveState: true,
+        preserveScroll: true
+    })
 }
 
 const confirmDelete = (role) => {
@@ -182,19 +202,22 @@ const confirmDelete = (role) => {
     showDeleteModal.value = true
 }
 
-const handleDelete = async () => {
-    try {
-        const response = await rolesStore.delete(roleToDelete.value.id)
-        toast.success(response.message || t('roles.deleteSuccess'))
-        showDeleteModal.value = false
-        roleToDelete.value = null
-        await loadRoles()
-    } catch (error) {
-        toast.error(error.message || t('common.error'))
-    }
-}
+const handleDelete = () => {
+    if (!roleToDelete.value) return
 
-onMounted(() => {
-    loadRoles()
-})
+    deleteForm.value.processing = true
+    router.delete(`/admin/roles/${roleToDelete.value.id}`, {
+        onSuccess: () => {
+            toast.success(t('roles.deleteSuccess'))
+            showDeleteModal.value = false
+            roleToDelete.value = null
+        },
+        onError: () => {
+            toast.error(t('common.error'))
+        },
+        onFinish: () => {
+            deleteForm.value.processing = false
+        }
+    })
+}
 </script>

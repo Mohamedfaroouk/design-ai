@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class LoginRequest extends FormRequest
 {
@@ -34,7 +36,26 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'email.required' => 'The email field is required.',
+            'email.email' => 'Please enter a valid email address.',
             'email.exists' => 'No account found with this email address.',
+            'password.required' => 'The password field is required.',
+            'password.min' => 'The password must be at least 6 characters.',
         ];
+    }
+
+    /**
+     * Handle a failed validation attempt.
+     *
+     * @param  \Illuminate\Contracts\Validation\Validator  $validator
+     * @return void
+     *
+     * @throws \Illuminate\Http\Exceptions\HttpResponseException
+     */
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(
+            back()->withErrors($validator->errors())->withInput()
+        );
     }
 }

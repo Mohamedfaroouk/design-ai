@@ -179,18 +179,17 @@
                         leave-to-class="opacity-0 max-h-0"
                     >
                         <div v-if="appStore.sidebarOpen && openGroups.includes(item.name)" class="mt-1 space-y-1 ps-4">
-                            <router-link
+                            <Link
                                 v-for="child in item.children"
                                 :key="child.name"
-                                :to="child.route"
-                                v-slot="{ isActive }"
+                                :href="child.route"
                                 @click="isMobile && appStore.toggleSidebar()"
                                 class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group relative"
-                                :class="isActive
+                                :class="isActiveRoute(child.route)
                                     ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm'
                                     : 'text-white/80 hover:bg-white/10 hover:text-white'"
                             >
-                                <div class="w-1.5 h-1.5 rounded-full" :class="isActive ? 'bg-accent' : 'bg-white/50'"></div>
+                                <div class="w-1.5 h-1.5 rounded-full" :class="isActiveRoute(child.route) ? 'bg-accent' : 'bg-white/50'"></div>
                                 <span class="text-sm">{{ child.label }}</span>
                                 <span
                                     v-if="child.badge"
@@ -198,32 +197,31 @@
                                 >
                                     {{ child.badge }}
                                 </span>
-                            </router-link>
+                            </Link>
                         </div>
                     </Transition>
                 </div>
 
                 <!-- Single Menu Item -->
-                <router-link
+                <Link
                     v-else
-                    :to="item.route"
-                    v-slot="{ isActive }"
+                    :href="item.route"
                     @click="isMobile && appStore.toggleSidebar()"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group relative overflow-hidden"
-                    :class="isActive
+                    :class="isActiveRoute(item.route)
                         ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm'
                         : 'text-white/80 hover:bg-white/10 hover:text-white'"
                 >
                     <!-- Active indicator -->
                     <div
-                        v-if="isActive"
+                        v-if="isActiveRoute(item.route)"
                         class="absolute start-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-gradient-to-b from-accent to-accent-dark rounded-e-full"
                     ></div>
 
                     <!-- Icon container -->
                     <div
                         class="w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200"
-                        :class="isActive
+                        :class="isActiveRoute(item.route)
                             ? 'bg-white/20 text-white'
                             : 'bg-white/5 text-white/70 group-hover:bg-white/10 group-hover:text-white'"
                     >
@@ -249,7 +247,7 @@
                     >
                         {{ item.badge }}
                     </span>
-                </router-link>
+                </Link>
             </template>
         </nav>
 
@@ -261,7 +259,6 @@
             style="bottom: 90px;"
             muted
             playsinline
-            @ended="onVideoEnded"
         >
             <source :src="settingDownVideo" type="video/mp4" />
         </video>
@@ -293,27 +290,40 @@
 </template>
 
 <script setup>
-import { h, ref, computed, onMounted, onUnmounted } from 'vue'
+import { h, ref, computed, onMounted, onUnmounted, onBeforeUnmount } from 'vue'
+import { Link, usePage } from '@inertiajs/vue3'
 import { useAppStore } from '@/store'
 import { useI18n } from 'vue-i18n'
-import authService from '@/services/auth'
 import logoFull from '@/assets/images/logo-full.png'
 import logoIcon from '@/assets/images/logo-icon.png'
 import settingDownVideo from '@/assets/videos/setting-down.mp4'
 
 const appStore = useAppStore()
 const { t } = useI18n()
+const page = usePage()
 const isMobile = ref(false)
 const openGroups = ref(['management'])
 const profileVideo = ref(null)
 
-// Get current user
-const user = computed(() => authService.getUser())
+// Get current user from Inertia props (safely handle undefined props)
+const user = computed(() => {
+    try {
+        return page?.props?.auth?.user || null
+    } catch (e) {
+        return null
+    }
+})
 
-const isRTL = computed(() => { 
+const isRTL = computed(() => {
     console.log(appStore.direction)
     return appStore.direction === 'rtl'
 })
+
+// Check if route is active
+const isActiveRoute = (route) => {
+    if (!page?.url) return false
+    return page.url === route || page.url.startsWith(route + '/')
+}
 
 const checkMobile = () => {
     isMobile.value = window.innerWidth < 1024
@@ -341,29 +351,31 @@ const playProfileVideo = () => {
     }
 }
 
-const onVideoEnded = () => {
-    // Video ended, do nothing (no loop as requested)
-}
 
 onMounted(() => {
     checkMobile()
     window.addEventListener('resize', checkMobile)
-    // Play the video when component mounts
     playProfileVideo()
 })
 
+
 onUnmounted(() => {
     window.removeEventListener('resize', checkMobile)
+    if (progressInterval) {
+        clearInterval(progressInterval)
+    }
 })
 
 // Check if user has permission
 const hasPermission = (permission) => {
-    return authService.hasPermission(permission)
+    const permissions = page?.props?.auth?.user?.permissions || []
+    return permissions.includes(permission)
 }
 
 // Check if user has role
 const hasRole = (role) => {
-    return authService.hasRole(role)
+    const userRole = page?.props?.auth?.user?.role
+    return userRole === role
 }
 
 // Client Menu Items (visible to all authenticated users)

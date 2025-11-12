@@ -1,5 +1,7 @@
 <template>
-    <div class="min-h-screen transition-colors duration-300 relative overflow-hidden"
+    <div 
+        key="app-layout-persistent"
+        class="min-h-screen transition-colors duration-300 relative overflow-hidden"
          :class="appStore.darkMode
              ? 'galaxy-bg'
              : 'bg-gradient-to-br from-gray-50 via-indigo-50/30 to-purple-50/30'">
@@ -55,8 +57,10 @@
 
         <!-- Main App -->
         <template v-else>
-            <!-- Sidebar -->
-            <Sidebar />
+            <!-- Sidebar (Persistent - kept alive across route changes) -->
+            <KeepAlive>
+                <Sidebar :key="'sidebar-persistent'" />
+            </KeepAlive>
 
             <!-- Main Content Area -->
             <div
@@ -71,19 +75,17 @@
 
                 <!-- Page Content -->
                 <main class="p-4 sm:p-6 lg:p-8 mt-20">
-                    <router-view v-slot="{ Component }">
-                        <transition
-                            enter-active-class="transition-all duration-300"
-                            enter-from-class="opacity-0 translate-y-4"
-                            enter-to-class="opacity-100 translate-y-0"
-                            leave-active-class="transition-all duration-200"
-                            leave-from-class="opacity-100 translate-y-0"
-                            leave-to-class="opacity-0 -translate-y-4"
-                            mode="out-in"
-                        >
-                            <component :is="Component" />
-                        </transition>
-                    </router-view>
+                    <transition
+                        enter-active-class="transition-all duration-300"
+                        enter-from-class="opacity-0 translate-y-4"
+                        enter-to-class="opacity-100 translate-y-0"
+                        leave-active-class="transition-all duration-200"
+                        leave-from-class="opacity-100 translate-y-0"
+                        leave-to-class="opacity-0 -translate-y-4"
+                        mode="out-in"
+                    >
+                        <slot />
+                    </transition>
                 </main>
             </div>
 
@@ -95,19 +97,19 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { usePage } from '@inertiajs/vue3'
 import { useAppStore } from '@/store'
 import { useToastStore } from '@/store'
-import authService from '@/services/auth'
 import Sidebar from './Sidebar.vue'
 import Topbar from './Topbar.vue'
 import Toast from '@/components/ui/Toast.vue'
+// KeepAlive is a built-in Vue component, no import needed
 
 const appStore = useAppStore()
 const toast = useToastStore()
-const router = useRouter()
+const page = usePage()
 const isMobile = ref(false)
-const loading = ref(true)
+const loading = ref(false)
 
 // Generate random shooting stars
 const shootingStars = ref([
@@ -144,27 +146,9 @@ const checkMobile = () => {
     isMobile.value = window.innerWidth < 1024
 }
 
-const loadUserData = async () => {
-    try {
-        // Call /api/auth/me to get fresh user data with permissions
-        const response = await authService.me()
-        // authService.me() already updates localStorage with fresh user data
-    } catch (error) {
-        // If /me fails (token invalid/expired), logout and redirect to login
-        console.error('Failed to load user data:', error)
-        authService.clearAuth()
-        router.push('/login')
-    } finally {
-        loading.value = false
-    }
-}
-
-onMounted(async () => {
+onMounted(() => {
     checkMobile()
     window.addEventListener('resize', checkMobile)
-
-    // Load user data on app initialization
-    await loadUserData()
 })
 
 onUnmounted(() => {

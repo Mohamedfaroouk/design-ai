@@ -15,7 +15,9 @@
       "WebFetch(domain:docs.salla.dev)",
       "Bash(npm run build:*)",
       "Read(//d/**)",
-      "Read(//c/Users/User/Downloads/**)"
+      "Read(//c/Users/User/Downloads/**)",
+      "Bash(composer require:*)",
+      "Bash(php:*)"
     ],
     "deny": [],
     "ask": []

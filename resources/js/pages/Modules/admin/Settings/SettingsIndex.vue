@@ -1,23 +1,20 @@
 <template>
     <div>
-        <div class="mb-6">
-            <h1 class="text-2xl sm:text-3xl font-bold transition-colors"
-                :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
-                {{ $t('settings.title') }}
-            </h1>
+        <div>
+            <Head :title="$t('settings.title')" />
+            <div class="mb-6">
+                <h1 class="text-2xl sm:text-3xl font-bold transition-colors"
+                    :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
+                    {{ $t('settings.title') }}
+                </h1>
             <p class="mt-2 text-sm transition-colors"
                :class="appStore.darkMode ? 'text-gray-400' : 'text-gray-600'">
                 {{ $t('settings.subtitle') }}
             </p>
         </div>
 
-        <!-- Loading State -->
-        <div v-if="loading" class="flex justify-center items-center py-12">
-            <Spinner size="lg" :text="$t('common.loading')" />
-        </div>
-
         <!-- Settings Tabs -->
-        <div v-else class="space-y-6">
+        <div class="space-y-6">
             <!-- Tabs Navigation - Horizontal Scroll on Mobile -->
             <div class="border-b"
                  :class="appStore.darkMode ? 'border-gray-700' : 'border-gray-200'">
@@ -59,7 +56,8 @@
                                 <!-- Text Input -->
                                 <TextInput
                                     v-if="setting.type === 'text'"
-                                    v-model="form[setting.key]"
+                                    :modelValue="form[setting.key]"
+                                    @update:modelValue="form[setting.key] = $event"
                                     :label="getSettingLabel(setting.key)"
                                     :error="getError(setting.key)"
                                 />
@@ -67,7 +65,8 @@
                                 <!-- Number Input -->
                                 <TextInput
                                     v-else-if="setting.type === 'number'"
-                                    v-model.number="form[setting.key]"
+                                    :modelValue="form[setting.key]"
+                                    @update:modelValue="form[setting.key] = $event"
                                     type="number"
                                     :label="getSettingLabel(setting.key)"
                                     :error="getError(setting.key)"
@@ -77,7 +76,8 @@
                                 <div v-else-if="setting.type === 'boolean'" class="flex items-center py-2">
                                     <input
                                         :id="setting.key"
-                                        v-model="form[setting.key]"
+                                        :checked="form[setting.key]"
+                                        @change="form[setting.key] = $event.target.checked"
                                         type="checkbox"
                                         class="w-4 h-4 rounded border-2 transition-all duration-200 cursor-pointer"
                                         :class="appStore.darkMode
@@ -100,18 +100,9 @@
                 <!-- Actions - Stack on Mobile -->
                 <div class="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
                     <Button
-                        type="button"
-                        variant="secondary"
-                        @click="loadSettings"
-                        :disabled="saving"
-                        class="w-full sm:w-auto"
-                    >
-                        {{ $t('common.cancel') }}
-                    </Button>
-                    <Button
                         type="submit"
                         variant="primary"
-                        :loading="saving"
+                        :loading="form.processing"
                         class="w-full sm:w-auto"
                     >
                         {{ $t('common.save') }}
@@ -119,28 +110,49 @@
                 </div>
             </form>
         </div>
+        </div>
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, h } from 'vue'
+import { Head, useForm } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/store'
 import { useToastStore } from '@/store'
-import { useAdminSettingsStore } from '@/store/admin/settings'
 import TextInput from '@/components/inputs/TextInput.vue'
 import Button from '@/components/ui/Button.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 
+const props = defineProps({
+    settings: {
+        type: Object,
+        required: true
+    }
+})
+
 const { t } = useI18n()
 const appStore = useAppStore()
 const toast = useToastStore()
-const settingsStore = useAdminSettingsStore()
 
-const form = ref({})
-const errors = ref({})
-const loading = ref(false)
-const saving = ref(false)
+// Convert grouped settings to flat form object
+const initializeFormData = () => {
+    const resolved = {}
+    Object.keys(props.settings).forEach(group => {
+        const groupData = props.settings[group]
+        // Handle array of settings
+        const settings = Array.isArray(groupData) ? groupData : []
+        settings.forEach(setting => {
+            if (setting && setting.key) {
+                resolved[setting.key] = setting.value || setting.typed_value || ''
+            }
+        })
+    })
+    return resolved
+}
+
+const form = useForm(initializeFormData())
+
 const activeTab = ref('general')
 
 // Icons as functional components
@@ -174,7 +186,20 @@ const settingGroups = computed(() => [
 ])
 
 const getGroupSettings = (group) => {
-    return settingsStore.settings[group] || []
+    const groupData = props.settings[group]
+    if (!groupData) return []
+    
+    // If it's already an array, return it
+    if (Array.isArray(groupData)) {
+        return groupData
+    }
+    
+    // If it's an object (ResourceCollection resolved), convert to array
+    if (typeof groupData === 'object') {
+        return Object.values(groupData)
+    }
+    
+    return []
 }
 
 const getSettingLabel = (key) => {
@@ -183,49 +208,20 @@ const getSettingLabel = (key) => {
 }
 
 const getError = (key) => {
-    const error = errors.value[key]
-    if (!error) return ''
-    return Array.isArray(error) ? error[0] : error
+    return form.errors[key] || ''
 }
 
-const loadSettings = async () => {
-    loading.value = true
-    try {
-        await settingsStore.fetchAll()
-
-        // Populate form
-        for (const group in settingsStore.settings) {
-            settingsStore.settings[group].forEach(setting => {
-                form.value[setting.key] = setting.typed_value
-            })
+const handleSave = () => {
+    // Format data for the update request - wrap in 'settings' key
+    const settingsData = { settings: form.data() }
+    
+    form.transform(() => settingsData).put('/admin/settings', {
+        onSuccess: () => {
+            toast.success(t('settings.updateSuccess'))
+        },
+        onError: () => {
+            toast.error(t('settings.updateError'))
         }
-    } catch (error) {
-        toast.error(error.message || t('settings.loadError'))
-    } finally {
-        loading.value = false
-    }
+    })
 }
-
-const handleSave = async () => {
-    saving.value = true
-    errors.value = {}
-
-    try {
-        await settingsStore.updateBatch(form.value)
-        toast.success(t('settings.updateSuccess'))
-    } catch (error) {
-        if (error.errors) {
-            errors.value = error.errors
-        }
-        if (error.status !== 422) {
-            toast.error(error.message || t('settings.updateError'))
-        }
-    } finally {
-        saving.value = false
-    }
-}
-
-onMounted(() => {
-    loadSettings()
-})
 </script>

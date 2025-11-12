@@ -92,10 +92,10 @@ import logoIcon from '@/assets/images/logo-icon.png'
 
 const appStore = useAppStore()
 
-defineProps({
+const props = defineProps({
     title: {
         type: String,
-        required: true
+        default: ''
     },
     subtitle: {
         type: String,

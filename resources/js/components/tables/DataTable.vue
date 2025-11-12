@@ -228,7 +228,7 @@
                             <p class="font-medium">{{ emptyText }}</p>
                         </td>
                     </tr>
-                    <tr v-else v-for="(row, index) in localData" :key="index" class="transition-colors"
+                    <tr v-else v-for="(row, index) in localData" :key="row.id || row.name || index" class="transition-colors"
                         :class="appStore.darkMode ? 'hover:bg-gray-700/30' : 'hover:bg-primary-50/30'">
                         <td
                             v-for="column in columns"
@@ -359,15 +359,19 @@ const props = defineProps({
     tableHeight: {
         type: String,
         default: '500px'
+    },
+    filters: {
+        type: Object,
+        default: () => ({})
     }
 })
 
 const emit = defineEmits(['search', 'sort', 'page-change', 'filter'])
 
 const localData = ref(props.data)
-const localSearch = ref('')
-const sortBy = ref(null)
-const sortOrder = ref('asc')
+const localSearch = ref(props.filters?.search || '')
+const sortBy = ref(props.filters?.sort_by || null)
+const sortOrder = ref(props.filters?.sort_order || 'asc')
 const showFilters = ref(false)
 const localFilters = ref({})
 const searchTimeout = ref(null)
@@ -453,15 +457,55 @@ const clearFilters = () => {
     showFilters.value = false
 }
 
+// Watch for data changes
 watch(
     () => props.data,
     (newData) => {
-        localData.value = newData
-    }
+        // Ensure data is always an array
+        if (Array.isArray(newData)) {
+            localData.value = newData
+        } else if (newData && typeof newData === 'object') {
+            // If it's an object, try to extract array from it
+            localData.value = newData.data || Object.values(newData) || []
+        } else {
+            localData.value = []
+        }
+    },
+    { immediate: true, deep: true }
+)
+
+// Track if we're syncing from props to avoid emitting events
+const isSyncingFromProps = ref(false)
+
+// Sync filters from props (for Inertia)
+watch(
+    () => props.filters,
+    (newFilters) => {
+        if (newFilters) {
+            isSyncingFromProps.value = true
+            if (newFilters.search !== undefined) {
+                localSearch.value = newFilters.search || ''
+            }
+            if (newFilters.sort_by !== undefined) {
+                sortBy.value = newFilters.sort_by || null
+            }
+            if (newFilters.sort_order !== undefined) {
+                sortOrder.value = newFilters.sort_order || 'asc'
+            }
+            // Reset sync flag after a short delay
+            setTimeout(() => {
+                isSyncingFromProps.value = false
+            }, 100)
+        }
+    },
+    { immediate: true, deep: true }
 )
 
 // Watch search with debounce
 watch(localSearch, (newValue) => {
+    // Don't emit if we're syncing from props
+    if (isSyncingFromProps.value) return
+
     // Clear existing timeout
     if (searchTimeout.value) {
         clearTimeout(searchTimeout.value)

@@ -1,22 +1,24 @@
 <template>
     <div v-motion-fade>
-        <div class="flex items-center gap-4 mb-6">
-            <button
-                @click="$router.push('/admin/users')"
-                class="p-2 rounded-lg transition-colors"
-                :class="appStore.darkMode
-                    ? 'hover:bg-gray-700 text-gray-300'
-                    : 'hover:bg-gray-100 text-gray-700'"
-            >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"
-                    />
-                </svg>
-            </button>
+            <Head :title="isEditing ? $t('users.editUser') : $t('users.addNew')" />
+            <div class="flex items-center gap-4 mb-6">
+                <Link href="/admin/users">
+                <button
+                    class="p-2 rounded-lg transition-colors"
+                    :class="appStore.darkMode
+                        ? 'hover:bg-gray-700 text-gray-300'
+                        : 'hover:bg-gray-100 text-gray-700'"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 19l-7-7 7-7"
+                        />
+                    </svg>
+                </button>
+            </Link>
             <h1 class="text-3xl font-bold transition-colors"
                 :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
                 {{ isEditing ? $t('users.editUser') : $t('users.addNew') }}
@@ -34,7 +36,7 @@
                         v-model="form.name"
                         :label="$t('users.fields.name')"
                         :placeholder="$t('users.placeholders.name')"
-                        :error="getError('name')"
+                        :error="form.errors.name"
                         required
                     />
 
@@ -44,7 +46,7 @@
                         type="email"
                         :label="$t('users.fields.email')"
                         :placeholder="$t('users.placeholders.email')"
-                        :error="getError('email')"
+                        :error="form.errors.email"
                         required
                     />
 
@@ -54,7 +56,7 @@
                         type="password"
                         :label="$t('users.fields.password')"
                         :placeholder="$t('users.placeholders.password')"
-                        :error="getError('password')"
+                        :error="form.errors.password"
                         :required="!isEditing"
                     />
 
@@ -65,7 +67,7 @@
                         type="password"
                         :label="$t('users.fields.passwordConfirmation')"
                         :placeholder="$t('users.placeholders.passwordConfirmation')"
-                        :error="getError('password_confirmation')"
+                        :error="form.errors.password_confirmation"
                         :required="!isEditing || !!form.password"
                     />
 
@@ -76,8 +78,7 @@
                             :label="$t('users.fields.role')"
                             :placeholder="$t('users.placeholders.role')"
                             :options="roleOptions"
-                            :error="getError('role')"
-                            :disabled="loadingRoles"
+                            :error="form.errors.role"
                             required
                         />
                     </div>
@@ -86,24 +87,23 @@
                 <!-- Actions -->
                 <div class="flex items-center justify-end gap-4 mt-6 pt-6 border-t transition-colors"
                      :class="appStore.darkMode ? 'border-gray-700' : 'border-gray-200'">
-                    <Button type="button" variant="secondary" @click="$router.push('/admin/users')">
-                        {{ $t('common.cancel') }}
-                    </Button>
-                    <Button type="submit" variant="primary" :loading="loading">
+                    <Link href="/admin/users">
+                        <Button type="button" variant="secondary">
+                            {{ $t('common.cancel') }}
+                        </Button>
+                    </Link>
+                    <Button type="submit" variant="primary" :loading="form.processing">
                         {{ isEditing ? $t('common.update') : $t('common.create') }}
                     </Button>
                 </div>
             </form>
         </div>
-    </div>
+        </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useForm } from '@/composables/useForm'
-import { useAdminUsersStore } from '@/store/admin/users'
-import { useAdminRolesStore } from '@/store/admin/roles'
+import { computed } from 'vue'
+import { Head, Link, useForm } from '@inertiajs/vue3'
 import { useAppStore } from '@/store'
 import { useToastStore } from '@/store'
 import { useI18n } from 'vue-i18n'
@@ -111,76 +111,53 @@ import TextInput from '@/components/inputs/TextInput.vue'
 import Select from '@/components/inputs/Select.vue'
 import Button from '@/components/ui/Button.vue'
 
-const route = useRoute()
-const router = useRouter()
-const usersStore = useAdminUsersStore()
-const rolesStore = useAdminRolesStore()
+// Define props received from controller
+const props = defineProps({
+    user: {
+        type: Object,
+        default: null
+    },
+    roles: {
+        type: Array,
+        required: true
+    }
+})
+
 const appStore = useAppStore()
 const toast = useToastStore()
 const { t } = useI18n()
 
-const isEditing = computed(() => !!route.params.id)
-const loadingRoles = ref(false)
-const roleOptions = ref([])
+const isEditing = computed(() => !!props.user)
 
-const { form, errors, loading, getError, post, put } = useForm({
-    name: '',
-    email: '',
+const roleOptions = computed(() =>
+    props.roles.map(role => ({
+        value: role.name,
+        label: role.name.charAt(0).toUpperCase() + role.name.slice(1)
+    }))
+)
+
+// Initialize form with Inertia useForm
+const form = useForm({
+    name: props.user?.name || '',
+    email: props.user?.email || '',
     password: '',
     password_confirmation: '',
-    role: ''
+    role: props.user?.roles?.[0]?.name || ''
 })
 
-const loadRoles = async () => {
-    loadingRoles.value = true
-    try {
-        const response = await rolesStore.fetchList({ perPage: 100 })
-        roleOptions.value = rolesStore.roles.map(role => ({
-            value: role.name,
-            label: role.name.charAt(0).toUpperCase() + role.name.slice(1)
-        }))
-    } catch (error) {
-        toast.error(error.message || t('common.error'))
-    } finally {
-        loadingRoles.value = false
-    }
-}
-
-const handleSubmit = async () => {
-    try {
-        if (isEditing.value) {
-            await put(`/admin/users/${route.params.id}`, {
-                successMessage: t('users.updateSuccess'),
-                onSuccess: () => router.push('/admin/users')
-            })
-        } else {
-            await post('/admin/users', {
-                successMessage: t('users.createSuccess'),
-                onSuccess: () => router.push('/admin/users')
-            })
-        }
-    } catch (error) {
-        // Errors are already handled by useForm composable
-        // Field errors will be shown inline via errors reactive object
-    }
-}
-
-const loadUser = async () => {
+const handleSubmit = () => {
     if (isEditing.value) {
-        try {
-            const user = await usersStore.fetchOne(route.params.id)
-            form.name = user.name
-            form.email = user.email
-            form.role = user.roles?.[0]?.name || ''
-        } catch (error) {
-            toast.error(error.message || t('common.error'))
-            router.push('/admin/users')
-        }
+        form.put(`/admin/users/${props.user.id}`, {
+            onSuccess: () => {
+                toast.success(t('users.updateSuccess'))
+            }
+        })
+    } else {
+        form.post('/admin/users', {
+            onSuccess: () => {
+                toast.success(t('users.createSuccess'))
+            }
+        })
     }
 }
-
-onMounted(async () => {
-    await loadRoles()
-    await loadUser()
-})
 </script>

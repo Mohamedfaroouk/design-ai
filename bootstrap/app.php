@@ -20,6 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
                  ->runInBackground();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        // Register Inertia middleware for web routes
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
+
         // Register middleware aliases
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,

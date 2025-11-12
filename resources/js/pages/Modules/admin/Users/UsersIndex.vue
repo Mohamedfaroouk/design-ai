@@ -1,29 +1,33 @@
 <template>
     <div>
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-3xl font-bold transition-colors"
-                :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
-                {{ $t('users.title') }}
-            </h1>
-            <Button variant="primary" @click="$router.push('/admin/users/create')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 4v16m8-8H4"
-                    />
-                </svg>
-                {{ $t('users.addNew') }}
-            </Button>
+            <Head :title="$t('users.title')" />
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-3xl font-bold transition-colors"
+                    :class="appStore.darkMode ? 'text-gray-100' : 'text-gray-900'">
+                    {{ $t('users.title') }}
+                </h1>
+            <Link href="/admin/users/create">
+                <Button variant="primary">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 4v16m8-8H4"
+                        />
+                    </svg>
+                    {{ $t('users.addNew') }}
+                </Button>
+            </Link>
         </div>
 
         <DataTable
             :columns="columns"
-            :data="usersStore.users"
-            :meta="usersStore.meta"
-            :loading="usersStore.loading"
+            :data="items"
+            :meta="pagination"
+            :loading="false"
             :filterable="true"
+            :filters="filters"
             @search="handleSearch"
             @sort="handleSort"
             @page-change="handlePageChange"
@@ -60,22 +64,23 @@
 
             <template #actions="{ row }">
                 <div class="flex items-center gap-2">
-                    <button
-                        @click="$router.push(`/admin/users/${row.id}/edit`)"
-                        class="transition-colors"
-                        :class="appStore.darkMode
-                            ? 'text-indigo-400 hover:text-indigo-300'
-                            : 'text-primary-600 hover:text-primary-900'"
-                    >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                            />
-                        </svg>
-                    </button>
+                    <Link :href="`/admin/users/${row.id}/edit`">
+                        <button
+                            class="transition-colors"
+                            :class="appStore.darkMode
+                                ? 'text-indigo-400 hover:text-indigo-300'
+                                : 'text-primary-600 hover:text-primary-900'"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                            </svg>
+                        </button>
+                    </Link>
                     <button
                         @click="confirmDelete(row)"
                         class="transition-colors"
@@ -106,18 +111,17 @@
                 <Button variant="secondary" @click="showDeleteModal = false">
                     {{ $t('common.cancel') }}
                 </Button>
-                <Button variant="danger" :loading="usersStore.loading" @click="handleDelete">
+                <Button variant="danger" :loading="deleteForm.processing" @click="handleDelete">
                     {{ $t('common.delete') }}
                 </Button>
             </template>
         </Modal>
-    </div>
+        </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useAdminUsersStore } from '@/store/admin/users'
-import { useAdminRolesStore } from '@/store/admin/roles'
+import { ref, computed } from 'vue'
+import { Head, Link, router } from '@inertiajs/vue3'
 import { useAppStore } from '@/store'
 import { useToastStore } from '@/store'
 import { useI18n } from 'vue-i18n'
@@ -126,22 +130,33 @@ import Button from '@/components/ui/Button.vue'
 import Modal from '@/components/ui/Modal.vue'
 import Select from '@/components/inputs/Select.vue'
 
-const usersStore = useAdminUsersStore()
-const rolesStore = useAdminRolesStore()
+// Define props received from controller
+const props = defineProps({
+    items: {
+        type: Array,
+        required: true
+    },
+    pagination: {
+        type: Object,
+        required: true
+    },
+    filters: {
+        type: Object,
+        required: true
+    },
+    roles: {
+        type: Array,
+        required: true
+    }
+})
+
 const appStore = useAppStore()
 const toast = useToastStore()
 const { t } = useI18n()
 
 const showDeleteModal = ref(false)
 const userToDelete = ref(null)
-const filters = ref({
-    search: '',
-    sortBy: 'created_at',
-    sortOrder: 'desc',
-    page: 1,
-    perPage: 15,
-    role: ''
-})
+const deleteForm = ref({ processing: false })
 
 const columns = computed(() => [
     { key: 'avatar', label: '', sortable: false },
@@ -153,40 +168,53 @@ const columns = computed(() => [
 
 const roleOptions = computed(() => [
     { value: '', label: t('common.all') },
-    ...rolesStore.roles.map(role => ({
+    ...props.roles.map(role => ({
         value: role.id,
         label: role.name
     }))
 ])
 
-const loadUsers = async () => {
-    try {
-        await usersStore.fetchList(filters.value)
-    } catch (error) {
-        toast.error(error.message || t('common.error'))
-    }
-}
-
 const handleSearch = (query) => {
-    filters.value.search = query
-    filters.value.page = 1
-    loadUsers()
+    router.get('/admin/users', {
+        ...props.filters,
+        search: query,
+        page: 1
+    }, {
+        preserveState: true,
+        preserveScroll: true
+    })
 }
 
 const handleSort = ({ column, order }) => {
-    filters.value.sortBy = column
-    filters.value.sortOrder = order
-    loadUsers()
+    router.get('/admin/users', {
+        ...props.filters,
+        sort_by: column,
+        sort_order: order
+    }, {
+        preserveState: true,
+        preserveScroll: true
+    })
 }
 
 const handlePageChange = (page) => {
-    filters.value.page = page
-    loadUsers()
+    router.get('/admin/users', {
+        ...props.filters,
+        page: page
+    }, {
+        preserveState: true,
+        preserveScroll: true
+    })
 }
 
 const handleFilter = (filterData) => {
-    filters.value = { ...filters.value, ...filterData, page: 1 }
-    loadUsers()
+    router.get('/admin/users', {
+        ...props.filters,
+        ...filterData,
+        page: 1
+    }, {
+        preserveState: true,
+        preserveScroll: true
+    })
 }
 
 const confirmDelete = (user) => {
@@ -194,20 +222,22 @@ const confirmDelete = (user) => {
     showDeleteModal.value = true
 }
 
-const handleDelete = async () => {
-    try {
-        const response = await usersStore.delete(userToDelete.value.id)
-        toast.success(response.message || t('users.deleteSuccess'))
-        showDeleteModal.value = false
-        userToDelete.value = null
-        await loadUsers()
-    } catch (error) {
-        toast.error(error.message || t('common.error'))
-    }
-}
+const handleDelete = () => {
+    if (!userToDelete.value) return
 
-onMounted(async () => {
-    await rolesStore.fetchList()
-    await loadUsers()
-})
+    deleteForm.value.processing = true
+    router.delete(`/admin/users/${userToDelete.value.id}`, {
+        onSuccess: () => {
+            toast.success(t('users.deleteSuccess'))
+            showDeleteModal.value = false
+            userToDelete.value = null
+        },
+        onError: () => {
+            toast.error(t('common.error'))
+        },
+        onFinish: () => {
+            deleteForm.value.processing = false
+        }
+    })
+}
 </script>

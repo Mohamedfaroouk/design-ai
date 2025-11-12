@@ -173,7 +173,7 @@
                             </p>
                         </div>
 
-                        <router-link to="/admin/profile" @click="showUserMenu = false" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors group"
+                        <Link href="/admin/profile" @click="showUserMenu = false" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors group"
                            :class="appStore.darkMode
                                ? 'text-gray-300 hover:bg-gray-700'
                                : 'text-gray-700 hover:bg-primary-50'">
@@ -185,8 +185,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                             {{ $t('topbar.profile') }}
-                        </router-link>
-                        <router-link v-if="hasPermission('settings.view')" to="/admin/settings" @click="showUserMenu = false" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors group"
+                        </Link>
+                        <Link v-if="hasPermission('settings.view')" href="/admin/settings" @click="showUserMenu = false" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors group"
                            :class="appStore.darkMode
                                ? 'text-gray-300 hover:bg-gray-700'
                                : 'text-gray-700 hover:bg-primary-50'">
@@ -199,7 +199,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                             {{ $t('topbar.settings') }}
-                        </router-link>
+                        </Link>
 
                         <hr class="my-2"
                             :class="appStore.darkMode ? 'border-gray-700' : 'border-gray-100'" />
@@ -219,24 +219,27 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { Link, usePage, router } from '@inertiajs/vue3'
 import { useAppStore } from '@/store'
 import { useToastStore } from '@/store'
 import { useI18n } from 'vue-i18n'
-import authService from '@/services/auth'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher.vue'
 import DarkModeToggle from '@/components/ui/DarkModeToggle.vue'
 
 const appStore = useAppStore()
 const toast = useToastStore()
-const route = useRoute()
-const router = useRouter()
+const page = usePage()
 const { t } = useI18n()
 const showUserMenu = ref(false)
 const isMobile = ref(false)
 
-const pageTitle = computed(() => route.meta.title || 'Dashboard')
-const currentUser = computed(() => authService.getUser())
+const currentUser = computed(() => {
+    try {
+        return page?.props?.auth?.user || null
+    } catch (e) {
+        return null
+    }
+})
 const userInitials = computed(() => {
     const name = currentUser.value?.name || 'U'
     return name.charAt(0).toUpperCase()
@@ -244,21 +247,28 @@ const userInitials = computed(() => {
 
 // Check if user has permission
 const hasPermission = (permission) => {
-    return authService.hasPermission(permission)
+    try {
+        const permissions = page?.props?.auth?.user?.permissions || []
+        return permissions.includes(permission)
+    } catch (e) {
+        return false
+    }
 }
 
 const checkMobile = () => {
     isMobile.value = window.innerWidth < 1024
 }
 
-const handleLogout = async () => {
-    try {
-        await authService.logout()
-        toast.success(t('auth.logout') + ' ' + t('auth.login.success'))
-        router.push('/login')
-    } catch (error) {
-        toast.error(error.message || t('common.error'))
-    }
+const handleLogout = () => {
+    router.post('/logout', {}, {
+        onSuccess: () => {
+            toast.success(t('auth.logout') + ' ' + t('auth.login.success'))
+            window.location.reload();
+        },
+        onError: () => {
+            toast.error(t('common.error'))
+        }
+    })
 }
 
 onMounted(() => {

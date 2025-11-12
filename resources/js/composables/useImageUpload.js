@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import api from '@/services/api'
+import axios from 'axios'
 
 export function useImageUpload() {
     const preview = ref(null)
@@ -32,7 +32,7 @@ export function useImageUpload() {
         error.value = null
     }
 
-    const upload = async (file, url = '/upload') => {
+    const upload = async (file, url = '/client/uploads') => {
         if (!file) {
             error.value = 'No file selected'
             return null
@@ -46,13 +46,21 @@ export function useImageUpload() {
             const formData = new FormData()
             formData.append('file', file)
 
-            const response = await api.upload(url, formData, (progressEvent) => {
-                progress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            // Use axios directly for file uploads with progress tracking
+            const response = await axios.post(url, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        progress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+                    }
+                },
             })
 
-            return response
+            return response.data
         } catch (err) {
-            error.value = err.message || 'Upload failed'
+            error.value = err.response?.data?.message || err.message || 'Upload failed'
             throw err
         } finally {
             uploading.value = false

@@ -1,34 +1,37 @@
 <template>
   <div>
-    <!-- Page Header -->
-    <div class="mb-6">
-      <h1
-        :class="
-          appStore.darkMode
-            ? 'text-gray-100'
-            : 'text-gray-900'
-        "
-        class="text-2xl font-bold transition-colors"
-      >
-        {{ $t('ai_generation.title') }}
-      </h1>
-      
-    </div>
+    <div>
+      <Head :title="$t('ai_generation.title')" />
+      <!-- Page Header -->
+      <div class="mb-6">
+        <h1
+          :class="
+            appStore.darkMode
+              ? 'text-gray-100'
+              : 'text-gray-900'
+          "
+          class="text-2xl font-bold transition-colors"
+        >
+          {{ $t('ai_generation.title') }}
+        </h1>
+        
+      </div>
 
-    <!-- Data Table -->
-    <DataTable
-      :columns="columns"
-      :data="generationStore.generations"
-      :meta="generationStore.meta"
-      :loading="generationStore.loading"
-      :searchable="false"
-      :filterable="true"
-      :search-placeholder="$t('ai_generation.search_placeholder')"
-      @search="handleSearch"
-      @sort="handleSort"
-      @page-change="handlePageChange"
-      @filter="handleFilter"
-    >
+      <!-- Data Table -->
+      <DataTable
+        :columns="columns"
+        :data="items"
+        :meta="pagination"
+        :loading="false"
+        :searchable="false"
+        :filterable="true"
+        :filters="filters"
+        :search-placeholder="$t('ai_generation.search_placeholder')"
+        @search="handleSearch"
+        @sort="handleSort"
+        @page-change="handlePageChange"
+        @filter="handleFilter"
+      >
       <!-- Filters -->
       <template #filters="{ filters, updateFilter }">
         <Select
@@ -427,34 +430,39 @@
         </button>
       </template>
     </Modal>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
+import { Head, router } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/store/index'
 import { useToastStore } from '@/store/index'
-import { useClientAiGenerationStore } from '@/store/client/aiGeneration'
 import DataTable from '@/components/tables/DataTable.vue'
 import Select from '@/components/inputs/Select.vue'
 import Modal from '@/components/ui/Modal.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 
+const props = defineProps({
+  items: {
+    type: Array,
+    required: true
+  },
+  pagination: {
+    type: Object,
+    required: true
+  },
+  filters: {
+    type: Object,
+    required: true
+  }
+})
+
 const { t } = useI18n()
 const appStore = useAppStore()
 const toast = useToastStore()
-const generationStore = useClientAiGenerationStore()
-
-// Filters state
-const filters = ref({
-  search: '',
-  sortBy: 'created_at',
-  sortOrder: 'desc',
-  page: 1,
-  perPage: 15,
-  status: ''
-})
 
 // Image loading states
 const imageLoaded = ref({})
@@ -605,15 +613,11 @@ const showRetryModal = (item) => {
 const handleRetry = async () => {
   if (!selectedItem.value) return
 
-  try {
-    await generationStore.retry(selectedItem.value.id)
-    toast.success(t('ai_generation.messages.retry_success'))
-    retryModalVisible.value = false
-    selectedItem.value = null
-    await loadGenerations()
-  } catch (error) {
-    toast.error(error.message || t('ai_generation.errors.retry_failed'))
-  }
+  // Note: Retry functionality would need to be implemented in the controller
+  // For now, we'll just show a message
+  toast.info(t('ai_generation.messages.retry_coming_soon'))
+  retryModalVisible.value = false
+  selectedItem.value = null
 }
 
 // Image preview modal
@@ -695,9 +699,4 @@ const resetImageStates = () => {
   imageLoaded.value = {}
   imageErrors.value = {}
 }
-
-// Initial load
-onMounted(() => {
-  loadGenerations()
-})
 </script>

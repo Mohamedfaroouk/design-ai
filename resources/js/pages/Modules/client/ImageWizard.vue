@@ -1,9 +1,11 @@
 <template>
-    <div
-        :class="appStore.darkMode ? 'bg-gray-900/60 text-gray-100' : 'bg-gray-50/60 text-gray-900'"
-        class=" py-8 transition-colors rounded-lg"
-    >
+    <div>
+        <div
+            :class="appStore.darkMode ? 'bg-gray-900/60 text-gray-100' : 'bg-gray-50/60 text-gray-900'"
+            class="py-8 transition-colors rounded-lg"
+        >
         <div class="max-w-6xl mx-auto px-4">
+            <Head :title="$t('ai.wizard.title')" />
             <!-- Header -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold mb-2">
@@ -135,9 +137,9 @@
                                     class="p-4 rounded-lg border-2 cursor-pointer transition-all"
                                     :class="{
                                         'border-primary-600 bg-primary-50 dark:bg-primary-900/20':
-                                            selectedProductIds.includes(product.id),
+                                            isProductSelected(product.id),
                                         'border-gray-300 dark:border-gray-600 hover:border-primary-400':
-                                            !selectedProductIds.includes(product.id),
+                                            !isProductSelected(product.id),
                                     }"
                                 >
                                     <div v-if="product.image_url || product.latest_image" class="mb-3">
@@ -566,26 +568,24 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, computed, watch, onMounted } from 'vue'
+import { Head, router, usePage } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useToastStore } from '@/store/index'
 import { useClientProductsStore } from '@/store/client/products'
 import { buildPrompt } from '@/composables/useAIPromptBuilder'
-import aiImageService from '@/services/client/aiImage'
-import authService from '@/services/auth'
 import TextInput from '@/components/inputs/TextInput.vue'
 import Textarea from '@/components/inputs/Textarea.vue'
 import ImagePicker from '@/components/inputs/ImagePicker.vue'
 import Button from '@/components/ui/Button.vue'
 
 const { t } = useI18n()
-const router = useRouter()
-const route = useRoute()
+const page = usePage()
 const appStore = useAppStore()
 const toast = useToastStore()
 const productsStore = useClientProductsStore()
@@ -597,8 +597,15 @@ const showNewProductForm = ref(false)
 const selectedProductIds = ref([])
 const existingProducts = ref([])
 
+// Watch for products prop changes (in case of navigation)
+watch(() => page.props.products, (newProducts) => {
+    if (newProducts && Array.isArray(newProducts)) {
+        existingProducts.value = newProducts
+    }
+}, { immediate: true })
+
 // Get current user
-const currentUser = computed(() => authService.getUser())
+const currentUser = computed(() => page.props.auth?.user || null)
 const userHasAvatar = computed(() => !!currentUser.value?.avatar)
 
 const formData = ref({
@@ -802,24 +809,35 @@ const generateImages = async () => {
             }
         }
 
-        const response = await aiImageService.generate({
+        // Use Inertia router to submit the generation request
+        router.post('/client/ai-generations/generate', {
             products: allProducts,
             image_size: '1:1',
             output_format: 'png',
+        }, {
+            onSuccess: () => {
+                // Show success message
+                toast.success(
+                    t('ai.wizard.batch_success', { count: allProducts.length })
+                )
+
+                // Navigate to AI generations index
+                setTimeout(() => {
+                    router.visit('/client/ai-generations')
+                }, 1500)
+                generating.value = false
+            },
+            onError: (errors) => {
+                const errorMessage = errors.message || Object.values(errors)[0]?.[0] || t('ai.generation.failed')
+                toast.error(errorMessage)
+                generating.value = false
+            },
+            onFinish: () => {
+                generating.value = false
+            }
         })
-
-        // Show success message
-        toast.success(
-            t('ai.wizard.batch_success', { count: allProducts.length })
-        )
-
-        // Navigate to AI generations index
-        setTimeout(() => {
-            router.push({ name: 'client.ai-generations.index' })
-        }, 1500)
     } catch (error) {
         toast.error(error.message || t('ai.generation.failed'))
-    } finally {
         generating.value = false
     }
 }
@@ -836,30 +854,58 @@ const getLogoPositionLabel = (value) => {
     return logoPositions.find((p) => p.value === value)?.label || value
 }
 
-// Load existing products
-const loadExistingProducts = async () => {
-    try {
-        const response = await productsStore.fetchList({ platform: 'others', perPage: 100 })
-        existingProducts.value = response.data || []
-
-        // If coming from product detail page, pre-select the product
-        if (route.query.productId) {
-            const productId = parseInt(route.query.productId)
-            selectedProductIds.value = [productId]
-        }
-    } catch (error) {
-        console.error('Failed to load products:', error)
+// Load existing products from props
+const loadExistingProducts = () => {
+    // Get products from page props (passed from controller)
+    const products = page.props.products || []
+    
+    // Ensure products is an array and has the correct structure
+    existingProducts.value = Array.isArray(products) ? products : []
+    
+    // Debug: log products to see structure
+    if (existingProducts.value.length > 0) {
+        console.log('Loaded products:', existingProducts.value)
     }
+
+    // If coming from product detail page, pre-select the product
+    const urlParams = new URLSearchParams(window.location.search)
+    const productId = urlParams.get('productId')
+    if (productId) {
+        selectedProductIds.value = [parseInt(productId)]
+    }
+}
+
+// Check if product is selected
+const isProductSelected = (productId) => {
+    const id = typeof productId === 'number' ? productId : parseInt(productId)
+    return selectedProductIds.value.includes(id)
 }
 
 // Toggle product selection
 const toggleProductSelection = (product) => {
-    const index = selectedProductIds.value.indexOf(product.id)
+    if (!product || product.id === undefined || product.id === null) {
+        console.error('Invalid product:', product)
+        return
+    }
+    
+    const productId = typeof product.id === 'number' ? product.id : parseInt(product.id)
+    
+    if (isNaN(productId)) {
+        console.error('Invalid product ID:', product.id)
+        return
+    }
+    
+    const index = selectedProductIds.value.indexOf(productId)
+    
     if (index > -1) {
+        // Deselect
         selectedProductIds.value.splice(index, 1)
     } else {
-        selectedProductIds.value.push(product.id)
+        // Select
+        selectedProductIds.value.push(productId)
     }
+    
+    console.log('Selected products:', selectedProductIds.value)
 }
 
 // Initialize on mount
